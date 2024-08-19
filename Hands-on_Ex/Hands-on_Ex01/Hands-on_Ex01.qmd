@@ -295,8 +295,8 @@ In the code chunk below, appropriate **ggplot2** functions will be used.
 ggplot(data = mpsz3414,
        aes(x = as.numeric(`PreSch Density`))) +
   geom_histogram(bins = 20, color = "black", fill = "light blue") +
-  labs(title = "Are pre-school even distributed in Singapore?",
-       subtitle= "There are many planning sub-zones with a single pre-school, on the other hand, \nthere are two planning sub-zones with at least 20 pre-schools",
+  labs(title = "Are pre-schools evenly distributed in Singapore?",
+       subtitle= "There are many planning sub-zones with a single pre-school, on the other hand, \nthere are few planning sub-zones with at least 20 pre-schools",
        x = "Pre-school density (per km sq)",
        y = "Frequency")
 ```
