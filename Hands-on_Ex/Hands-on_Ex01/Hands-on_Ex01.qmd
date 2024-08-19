@@ -27,7 +27,7 @@ In this hands-on exercise, two R packages will be used. They are:
 
 -   **tidyverse** for performing data science tasks such as importing, wrangling and visualising data.
 
-[`p_load`](https://cran.r-project.org/web/packages/pacman/pacman.pdf) function pf [**pacman**](https://github.com/trinker/pacman) package is used to install and load sf and tidyverse pacages into R environment.
+[`p_load`](https://cran.r-project.org/web/packages/pacman/pacman.pdf) function pf [**pacman**](https://github.com/trinker/pacman) package is used to install and load sf and tidyverse packages into R environment.
 
 ```{r}
 pacman::p_load(sf, tidyverse)
