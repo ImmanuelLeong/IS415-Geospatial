@@ -62,7 +62,7 @@ The code chunk below uses *st_read()* function of **sf** package to import `Cycl
 cyclingpath = st_read(dsn = "data/geospatial", layer = "CyclingPathGazette")
 ```
 
-The message above reveals that there are a total of 2558 features and 2 fields in `cyclingpath` linestring feature data frame and it is in **svy21** projected coordinates system too.
+The message above reveals that there are a total of 3138 features and 2 fields in `cyclingpath` linestring feature data frame and it is in **svy21** projected coordinates system too.
 
 ### **1.4.3 Importing GIS data in kml format**
 
