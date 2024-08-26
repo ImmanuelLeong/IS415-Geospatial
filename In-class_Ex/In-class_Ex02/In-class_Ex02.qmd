@@ -1,0 +1,119 @@
+---
+title: "In-class Exercise 2"
+author: "Immanuel Leong"
+date: "August 26, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+## Working with Master Plan 2014 Subzone Boundary Data
+
+Install and load **sf** and **tidyverse** packages into R environment.
+
+```{r}
+pacman::p_load(tidyverse, sf)
+```
+
+This code chunk imports shapefile.
+
+```{r}
+mpsz14_shp <- st_read(dsn = "data/", layer = "MP14_SUBZONE_WEB_PL")
+```
+
+```{r}
+class(mpsz14_shp)
+```
+
+This code chunk imports kml file.
+
+```{r}
+# mpsz14_kml <- st_read("data/MasterPlan2014SubzoneBoundaryWebKML.kml")
+```
+
+The second code chunk does not work due to a problem with the source. We use the following code chunk to export **mpsz14_shp** into kml format and save the output in the data subfolder.
+
+```{r}
+st_write(mpsz14_shp, 
+         "data/MP14_SUBZONE_WEB_PL.kml",
+         delete_dsn = TRUE)
+
+#delete_dsn = TRUE avoids Error: Dataset already exists.
+
+```
+
+## Working with Master Plan 2019 Subzone Boundary Data
+
+This code chunk imports shapefile.
+
+```{r}
+mpsz19_shp <- st_read(dsn = "data/", layer = "MPSZ-2019")
+```
+
+This code chunk imports kml.
+
+```{r}
+mpsz19_kml <- st_read("data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+```
+
+Transform the data to the **svy21** projected coordinate system.
+
+```{r}
+mpsz19_shp <- st_read(dsn = "data/", layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+mpsz19_kml <- st_read("data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml") %>%
+  st_transform(crs = 3414)
+```
+
+Check the CRS.
+
+```{r}
+st_crs(mpsz19_shp)
+```
+
+```{r}
+st_crs(mpsz19_kml)
+```
+
+## Working with Population Data
+
+Import the data.
+
+```{r}
+popdata <- read_csv("data/respopagesextod2023.csv")
+```
+
+```{r}
+popdata2023 <- popdata %>%
+  group_by(PA, SZ, AG) %>%
+  summarise(`POP` = sum(`Pop`)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = AG, values_from = POP)
+
+colnames(popdata2023)
+```
+
+```{r}
+popdata2023 <- popdata2023 %>%
+  mutate(`YOUNG` = rowSums(.[3:6]) + rowSums(.[14])) %>%
+  mutate(`ECONOMY ACTIVE` = rowSums(.[7:13]) + rowSums(.[15])) %>%
+  mutate(`AGED` = rowSums(.[16:21])) %>%
+  mutate(`TOTAL` = rowSums(.[3:21])) %>%
+  mutate(`DEPENDENCY` = (`YOUNG` + `AGED`) / `ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`,`ECONOMY ACTIVE`, `AGED`, `TOTAL`, `DEPENDENCY`)
+```
+
+Joining **popdata2023** and **mpsz19_shp**
+
+```{r}
+popdata2023 <- popdata2023 %>%
+  mutate_at(.vars = vars(PA, SZ), .funs = list(toupper))
+  
+pop2023_mpsz <- left_join(popdata2023, mpsz19_shp, by = c("SZ" = "SUBZONE_N"))
+```

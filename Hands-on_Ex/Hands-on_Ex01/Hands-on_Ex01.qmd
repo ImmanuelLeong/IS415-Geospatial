@@ -1,6 +1,13 @@
 ---
 title: "Hands-On Exercise 1"
 author: "Immanuel"
+date: "August 17, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
 ---
 
 ## 1.1 Overview
