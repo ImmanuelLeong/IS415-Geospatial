@@ -709,3 +709,291 @@ clarkevans.test(childcare_tm_ppp,
 ```
 
 The p-value is extremely small. There is sufficent evidence to reject the null hypothesis and conclude that the distribution of childcare services is not random in Tampines.
+
+# **5  2nd Order Spatial Point Patterns Analysis Methods**
+
+The next section of this hands-on exercise is based on Chapter 5 of R for Geospatial Data Science and Analytics, beginning at Section 7.
+
+## **5.7 Analysing Spatial Point Process Using G-Function**
+
+The G function measures the distribution of the distances from an arbitrary event to its nearest event. In this section, we learn how to compute G-function estimation by using [*Gest()*](https://rdrr.io/cran/spatstat/man/Gest.html) of **spatstat** package. We will also learn how to perform monta carlo simulation test using [*envelope()*](https://rdrr.io/cran/spatstat/man/envelope.html) of **spatstat** package.
+
+### **5.7.1 Choa Chu Kang planning area**
+
+#### 5.7.1.1 Computing G-function estimation
+
+The code chunk below is used to compute G-function using *Gest()* of **spatat** package.
+
+```{r}
+
+G_CK = Gest(childcare_ck_ppp, correction = "border")
+
+plot(G_CK, xlim = c(0, 500))
+```
+
+#### 5.7.1.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypotheses and test are as follows:
+
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+Monte Carlo test with G-function
+
+```{r}
+G_CK.csr <- envelope(childcare_ck_ppp, Gest, nsim = 999)
+```
+
+```{r}
+plot(G_CK.csr)
+```
+
+Since the estimated G(r) lies between the upper and lower envelopes, there is insufficient evidence to reject the null hypothesis that the distribution of childcare services at Choa Chu Kang is random.
+
+### **5.7.2 Tampines planning area**
+
+#### 5.7.2.1 Computing G-function estimation
+
+```{r}
+G_tm <- Gest(childcare_tm_ppp, correction = "best")
+
+plot(G_tm)
+```
+
+#### 5.7.2.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypotheses and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
+
+```{r}
+G_tm.csr <- envelope(childcare_tm_ppp, Gest, correction = "all", nsim = 999)
+```
+
+```{r}
+plot(G_tm.csr)
+```
+
+The estimated G(r) lies between the upper and lower envelopes for most distances except for a very small range. There is insufficient evidence to reject the null hypothesis that the distribution of childcare services at Tampines is random.
+
+## **5.8 Analysing Spatial Point Process Using F-Function**
+
+The F function estimates the empty space function F(r) or its hazard rate h(r) from a point pattern in a window of arbitrary shape. In this section, you will learn how to compute F-function estimation by using [*Fest()*](https://rdrr.io/cran/spatstat/man/Fest.html) of **spatstat** package. You will also learn how to perform monte carlo simulation test using [*envelope()*](https://rdrr.io/cran/spatstat/man/envelope.html) of **spatstat** package.
+
+### **5.8.1 Choa Chu Kang planning area**
+
+#### 5.8.1.1 Computing F-function estimation
+
+The code chunk below is used to compute F-function using *Fest()* of **spatat** package.
+
+```{r}
+F_CK = Fest(childcare_ck_ppp)
+
+plot(F_CK)
+```
+
+### **5.8.2 Performing Complete Spatial Randomness Test**
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+Monte Carlo test with F-fucntion
+
+```{r}
+F_CK.csr <- envelope(childcare_ck_ppp, Fest, nsim = 999)
+```
+
+```{r}
+plot(F_CK.csr)
+```
+
+Estimated F(r) lies between the upper and lower envelopes . There is insufficient evidence to reject the null hypothesis. We conclude that the distribution of childcare services at Choa Chu Kang is random.
+
+### **5.8.3 Tampines planning area**
+
+#### 5.8.3.1 Computing F-function estimation
+
+Monte Carlo test with F-fucntion
+
+```{r}
+F_tm = Fest(childcare_tm_ppp, correction = "best")
+
+plot(F_tm)
+```
+
+#### 5.8.3.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypotheses and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
+
+```{r}
+F_tm.csr <- envelope(childcare_tm_ppp, Fest, correction = "all", nsim = 999)
+```
+
+```{r}
+plot(F_tm.csr)
+```
+
+Estimated F(r) lies below the lower envelope for distances above 350m, suggesting that the distribution of childcare services at Tampines is clustered.
+
+## **5.9 Analysing Spatial Point Process Using K-Function**
+
+K-function measures the number of events found up to a given distance of any particular event. In this section, you will learn how to compute K-function estimates by using [*Kest()*](https://rdrr.io/cran/spatstat/man/Kest.html) of **spatstat** package. You will also learn how to perform monta carlo simulation test using *envelope()* of spatstat package.
+
+### **5.9.1 Choa Chu Kang planning area**
+
+#### 5.9.1.1 Computing K-function estimate
+
+```{r}
+K_ck = Kest(childcare_ck_ppp, correction = "Ripley")
+plot(K_ck, ylab= "K(r)", xlab = "r(m)")
+```
+
+#### 5.9.1.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypotheses and test are as follows:
+
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
+
+```{r}
+K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 999, nrank = 1, glocal = TRUE)
+
+```
+
+```{r}
+plot(K_ck.csr, xlab="r", ylab="K(d)")
+```
+
+The estimated K(r) lies between the upper and lower envelopes. There is insufficient evidence to reject the null hypothesis. We conclude that the distribution of childcare services at Choa Chu Kang is random.
+
+### **5.9.2 Tampines planning area**
+
+#### 5.9.2.1 Computing K-function estimation
+
+```{r}
+K_tm = Kest(childcare_tm_ppp, correction = "Ripley")
+
+plot(K_tm, ylab= "K(r)", xlab = "r(m)", xlim = c(0,1000))
+```
+
+#### 5.9.2.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
+
+```{r}
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, rank = 1, glocal = TRUE)
+```
+
+```{r}
+plot(K_tm.csr, xlab="r", ylab="K(r)", xlim = c(0,500))
+```
+
+The estimated K(r) lies above the upper envelope. There is sufficient evidence to reject the null hypothesis and conclude that the distribution of childcare services at Tampines is non-random. Since the estimated K(r) lies above the upper envelope, there is a significant cluster pattern.
+
+## **5.10 Analysing Spatial Point Process Using L-Function**
+
+In this section, you will learn how to compute L-function estimation by using [*Lest()*](https://rdrr.io/cran/spatstat/man/Lest.html) of **spatstat** package. You will also learn how to perform monte carlo simulation test using *envelope()* of spatstat package.
+
+### **5.10.1 Choa Chu Kang planning area**
+
+#### 5.10.1.1 Computing modified L Function estimation
+
+```{r}
+L_ck = Lest(childcare_ck_ppp, correction = "Ripley")
+
+plot(L_ck, .-r ~ r, ylab= "L(r) - r", xlab = "r(m)")
+```
+
+#### 5.10.1.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Choa Chu Kang are randomly distributed.
+
+H1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.
+
+The null hypothesis will be rejected if p-value if smaller than alpha value of 0.001.
+
+The code chunk below is used to perform the hypothesis testing.
+
+```{r}
+L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 999, rank = 1, glocal = TRUE)
+
+```
+
+```{r}
+plot(L_ck.csr, . - r ~ r, xlab = "r", ylab = "L(r)-r")
+
+```
+
+The estimated L(r) lies between the upper and lower envelopes. There is insufficient evidence to reject the null hypothesis. Again, we conclude that the distribution of childcare services at Choa Chu Kang is random.
+
+### **5.10.2 Tampines planning area**
+
+#### 5.10.2.1 Computing L-function estimate
+
+```{r}
+L_tm = Lest(childcare_tm_ppp, correction = "Ripley")
+
+plot(L_tm, . -r ~ r, ylab= "L(r)-r", xlab = "r(m)", xlim = c(0,1000))
+```
+
+#### 5.10.2.2 Performing Complete Spatial Randomness Test
+
+To confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:
+
+Ho = The distribution of childcare services at Tampines are randomly distributed.
+
+H1= The distribution of childcare services at Tampines are not randomly distributed.
+
+The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
+
+The code chunk below will be used to perform the hypothesis testing.
+
+```{r}
+L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 999, nrank = 1, glocal = TRUE)
+
+```
+
+Then, plot the model output by using the code chun below.
+
+```{r}
+plot(L_tm.csr, . - r ~ r, xlab="r", ylab="L(r)-r", xlim = c(0,500))
+```
+
+The estimated L(r) lies above the upper envelope. There is sufficient evidence to reject the null hypothesis and conclude that the distribution of childcare services in Tampines is non-random. Since L(r) \>0, this indicates that the observed distribution is geographically concentrated.
