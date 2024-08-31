@@ -16,12 +16,6 @@ execute:
 
 Using appropriate functions of [spatstat](https://cran.r-project.org/web/packages/spatstat/), this hands-on exercise aims to discover the spatial point processes of childcare centres in Singapore.
 
-The specific questions we would like to answer are as follows:
-
--   are the childcare centres in Singapore randomly distributed throughout the country?
-
--   if the answer is not, then the next logical question is where are the locations with higher concentration of childcare centres?
-
 ## **4.2 The data**
 
 To provide answers to the questions above, three data sets will be used. They are:
@@ -260,7 +254,7 @@ The code chunk below implements the jittering approach.
 childcare_ppp_jit <- rjitter(childcare_ppp, retry = TRUE, nsim = 1, drop = TRUE)
 ```
 
-DIY: Using the method you learned in previous section, check if any dusplicated point in this geospatial data.
+DIY: Using the method you learned in previous section, check if any duplicated point in this geospatial data.
 
 ```{r}
 any(duplicated(childcare_ppp_jit))
@@ -362,6 +356,9 @@ Now, we can re-run *density()* using the resale data set and plot the output kde
 ```{r}
 kde_childcareSG.bw <- density(childcareSG_ppp.km, sigma = bw.diggle, edge = TRUE, kernel = "gaussian")
 
+```
+
+```{r}
 plot(kde_childcareSG.bw)
 ```
 
@@ -913,14 +910,14 @@ H1= The distribution of childcare services at Tampines are not randomly distribu
 
 The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
 
-The code chunk below is used to perform the hypothesis testing.
+The code chunk below is used to perform the hypothesis testing.{r}
 
 ```{r}
-K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, rank = 1, global = TRUE)
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, nrank = 1, global = TRUE)
 ```
 
 ```{r}
-plot(K_tm.csr, xlab="r", ylab="K(r)", xlim = c(0,500))
+plot(K_tm.csr, xlab = "r", ylab = "K(r)", xlim = c(0,500))
 ```
 
 The estimated K(r) lies above the upper envelope. There is sufficient evidence to reject the null hypothesis and conclude that the distribution of childcare services at Tampines is non-random. Since the estimated K(r) lies above the upper envelope, there is a significant cluster pattern.
@@ -990,10 +987,10 @@ L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 999, nrank = 1, global = TRU
 
 ```
 
-Then, plot the model output by using the code chun below.
+Then, plot the model output by using the code chunk below.
 
 ```{r}
-plot(L_tm.csr, . - r ~ r, xlab="r", ylab="L(r)-r", xlim = c(0,500))
+plot(L_tm.csr, . - r ~ r, xlab = "r", ylab = "L(r)-r", xlim = c(0,500))
 ```
 
 The estimated L(r) lies above the upper envelope. There is sufficient evidence to reject the null hypothesis and conclude that the distribution of childcare services in Tampines is non-random. Since L(r) \>0, this indicates that the observed distribution is geographically concentrated.
