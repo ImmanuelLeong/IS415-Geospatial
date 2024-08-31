@@ -1009,7 +1009,7 @@ The code chunk below is used to perform the hypothesis testing.
 
 
 ```{r}
-K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 999, nrank = 1, glocal = TRUE)
+K_ck.csr <- envelope(childcare_ck_ppp, Kest, nsim = 999, nrank = 1, global = TRUE)
 
 ```
 
@@ -1046,7 +1046,7 @@ The code chunk below is used to perform the hypothesis testing.
 
 
 ```{r}
-K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, rank = 1, glocal = TRUE)
+K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, rank = 1, global = TRUE)
 ```
 
 ```{r}
@@ -1086,7 +1086,7 @@ The code chunk below is used to perform the hypothesis testing.
 
 
 ```{r}
-L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 999, rank = 1, glocal = TRUE)
+L_ck.csr <- envelope(childcare_ck_ppp, Lest, nsim = 999, rank = 1, global = TRUE)
 
 ```
 
@@ -1124,7 +1124,7 @@ The code chunk below will be used to perform the hypothesis testing.
 
 
 ```{r}
-L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 999, nrank = 1, glocal = TRUE)
+L_tm.csr <- envelope(childcare_tm_ppp, Lest, nsim = 999, nrank = 1, global = TRUE)
 
 ```
 
