@@ -386,9 +386,9 @@ bw.ppl(childcareSG_ppp.km)
 bw.diggle(childcareSG_ppp.km)
 ```
 
-Baddeley et. (2016) suggested the use of the *bw.ppl()* algorithm because in ther experience it tends to produce the more appropriate values when the pattern consists predominantly of tight clusters. But they also insist that if the purpose of once study is to detect a single tight cluster in the midst of random noise then the *bw.diggle()* method seems to work best.
+Baddeley et. (2016) suggested the use of the *bw.ppl()* algorithm because in their experience it tends to produce the more appropriate values when the pattern consists predominantly of tight clusters. But they also insist that if the purpose of once study is to detect a single tight cluster in the midst of random noise then the *bw.diggle()* method seems to work best.
 
-The code chunk beow will be used to compare the output of using *bw.diggle* and *bw.ppl* methods.
+The code chunk below will be used to compare the output of using *bw.diggle* and *bw.ppl* methods.
 
 ```{r}
 kde_childcareSG.ppl <- density(childcareSG_ppp.km, sigma = bw.ppl, edge = TRUE, kernel = "gaussian")
@@ -910,7 +910,7 @@ H1= The distribution of childcare services at Tampines are not randomly distribu
 
 The null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.
 
-The code chunk below is used to perform the hypothesis testing.{r}
+The code chunk below is used to perform the hypothesis testing.
 
 ```{r}
 K_tm.csr <- envelope(childcare_tm_ppp, Kest, nsim = 999, nrank = 1, global = TRUE)

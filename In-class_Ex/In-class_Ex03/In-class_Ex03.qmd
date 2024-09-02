@@ -1,0 +1,86 @@
+---
+title: "In-class Exercise 3"
+author: "Immanuel Leong"
+date: "September 2, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+# In-class Exercise 3: Spatial Point Patterns Analysis: spatstat methods
+
+```{r}
+pacman::p_load(sf, spatstat, raster, tmap, tidyverse)
+```
+
+```{r}
+childcare_sf <- st_read("data/child-care-services-geojson.geojson")
+
+mpsz_sf <- st_read(dsn = "data", layer = "MP14_SUBZONE_WEB_PL")
+```
+
+## Issue 1: Installing mapstools
+
+**maptools** is retired and binary is removed from CRAN. However, we can download it from Posit Public Package Manager using the code chunk below.
+
+```{r}
+#| eval: false
+# Avoid maptools being repetitively installed every time the Quarto document is rendered
+
+#install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
+```
+
+## Issue 2: Creating coastal outline
+
+*st_combine()* returns a single, combined geometry with no resolved boundaries; returned geometries may well be invalid
+
+If y is missing, *st_union(x)* returns a single geometry with resolved boundaries, else the geometries for all unioned pairs of x\[i\] and y\[j\]
+
+*st_union()* is used to derive the coastal outline sf tibble data.frame, sg_sf.
+
+```{r}
+sg_sf <- mpsz_sf %>%
+  st_union()
+
+plot(sg_sf)
+
+sg_sf_combine <- mpsz_sf %>%
+  st_combine()
+
+plot(sg_sf_combine)
+```
+
+## Issue 3: as.SpatialGridDataFrame.im()
+
+The *as.SpatialGridDataFrame.im()* function can only be used if **maptools** is installed
+
+```{r}
+#| eval: false
+
+# gridded_kde_childcareSG_ad <- maptools::as.SpatialGridDataFrame.im(kde_childcareSG_adaptive)
+
+# spplot(gridded_kde_childcareSG_ad)
+```
+
+Alternatively, we can use the *as()* function.
+
+```{r}
+# gridded_kde_childcareSG_ad <- as(kde_childcareSG_adaptive, "SpatialGridDataFrame")
+```
+
+## Geospatial Analytics for Social Good: Myanmar Armed Conflict Case Study
+
+Import ACLED data.
+
+```{r}
+
+acled_sf <- read_csv("data/ACLED_Myanmar.csv") %>%
+  st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+  st_transform(crs = 32647) %>%
+  mutate(event_date = dmy(event_date))
+
+acled_sf
+```
