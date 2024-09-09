@@ -25,7 +25,6 @@ pacman::p_load(sf, raster, spatstat, sparr, tmap, tidyverse)
 ### Importing study area
 
 ```{r}
-#| eval: FALSE
 
 kbb_sf <- st_read(dsn = "data/rawdata", 
                layer = "Kepulauan_Bangka_Belitung") %>%
@@ -151,9 +150,7 @@ for (i in tims) {
 
 We can analyse this continuously instead.
 
-```{r}
-
-#| eval: FALSE
+```{r, eval = FALSE}
 
 kde_yday <- spattemp.density(
   fire_yday_owin
