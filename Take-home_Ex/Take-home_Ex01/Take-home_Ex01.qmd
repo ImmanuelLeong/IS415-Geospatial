@@ -1,0 +1,476 @@
+---
+title: "Take-Home Exercise 1"
+author: "Immanuel Leong"
+date: "September 7, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+## **Take-home Exercise 1: Geospatial Analytics for Social Good: Application of Spatial and Spatio-temporal Point Patterns Analysis to discover the geographical distribution of Armed Conflict in Myanmar**
+
+## 1.0 Overview
+
+Geospatial analytics hold tremendous potential to address complex problems facing society. In this study, we are tasked to apply spatial point patterns analysis methods to discover the spatial and spatio-temporal distribution of armed conflict in Myanmar.
+
+### 1.1 Objectives
+
+The specific tasks of this take-home exercise are as follows:
+
+-   Using appropriate function of **sf** and **tidyverse** packages, import and transform the downloaded armed conflict data and administrative boundary data into sf tibble data.frames.
+
+-   Using the geospatial data sets prepared, derive quarterly KDE layers.
+
+-   Using the geospatial data sets prepared, perform 2nd-Order Spatial Point Patterns Analysis.
+
+-   Using the geospatial data sets prepared, derive quarterly spatio-temporal KDE layers.
+
+-   Using the geospatial data sets prepared, perform 2nd-Order Spatio-temporal Point Patterns Analysis.
+
+-   Using appropriate **tmap** functions, display the KDE and Spatio-temporal KDE layers on openstreetmap of Myanmar.
+
+-   Describe the spatial patterns revealed by the KDE and Spatio-temporal KDE maps.
+
+## 2.0 The Data
+
+The following two data sets will be used:
+
+-   `2021-01-01-2024-06-30-Southeast_Asia-Myanmar.csv` This csv file provides data on armed conflict events in Myanmar from 1 January 2021 until 30 June 2024, focusing on six event types: Battles, Explosion/Remote violence, Protests, Riots, Strategic developments, and Violence against civilians. It was downloaded from [Armed Conflict Location & Event Data (ACLED)](https://acleddata.com/) on 7 September 2024.
+
+-   `mmr_polbnda_adm1_250k_mimu_1` This polygon feature data set provides information on Myanmar state and region boundaries (Admin1). It was downloaded in ESRI shapefile format from [Myanmar Information Management Unit, MIMU](#0).
+
+## 3.0 Setup
+
+For this exercise, the following R packages are used:
+
+-   [**tidyverse**](https://www.tidyverse.org/), a collection of R packages designed for data science, and which provides functions to import, transform, and visualise the data.
+
+-   [**sf**](https://r-spatial.github.io/sf/), to import, manage and process vector-based geospatial data in R.
+
+-   [**spatstat**](https://spatstat.org/), which will be used to perform 1st- and 2nd-order spatial point patterns analysis and derive kernel density estimation (KDE) layers.
+
+-   [**tmap**](https://cran.r-project.org/web/packages/tmap/index.html)**,** which provides functions for plotting cartographic quality static point patterns maps or interactive maps.
+
+Install and launch these packages.
+
+```{r}
+pacman::p_load(tidyverse, sf, spatstat, tmap)
+```
+
+## 4.0 Importing the Data
+
+### 4.1 Importing Spatial Data
+
+Import `mmr_polbnda_adm2_250k_mimu` .
+
+```{r}
+adminboundaries_sf <- st_read(dsn = "data", layer = "mmr_polbnda_adm1_250k_mimu_1", as_tibble = TRUE)
+```
+
+`adminboundaries_sf` has a total of 15 features, and is projected in WGS 84.
+
+Check the class of `adminboundaries_sf`.
+
+```{r}
+class(adminboundaries_sf)
+```
+
+As required, it is a sf tibble data.frame.
+
+Verify that all the geometries in `adminboundaries_sf` are valid.
+
+```{r}
+length(which(st_is_valid(adminboundaries_sf) == TRUE))
+```
+
+Sometimes, when importing geospatial data into R, the coordinate system of the source data is wrongly assigned during the importing process. Check the CRS of `adminboundaries_sf`.
+
+```{r}
+st_crs(adminboundaries_sf)
+```
+
+The EPSG code indicated is 4326, which is correct since the data is projected in WGS 84.
+
+### 4.2 Importing Aspatial Data
+
+Since `2021-01-01-2024-06-30-Southeast_Asia-Myanmar.csv` is in csv format, we used *read_csv()* of the **readr** package to import it.
+
+```{r}
+armedconflict <- read_csv("data/2021-01-01-2024-06-30-Southeast_Asia-Myanmar.csv")
+
+glimpse(armedconflict)
+```
+
+The longitude and latitude fields capture the x- and y-coordinates of the data points respectively. They appear to be in the wgs84 Geographic Coordinate System.
+
+We then convert `armedconflict` to an sf object.
+
+```{r}
+armedconflict_sf <- st_as_sf(armedconflict, coords = c("longitude","latitude"), crs = 4326)
+
+st_geometry(armedconflict_sf)
+```
+
+`armedconflict_sf` has a total of 51553 features.
+
+Check the class of `armedconflict_sf` .
+
+```{r}
+class(armedconflict_sf)
+```
+
+As required, it is a sf tibble data.frame.
+
+Verify that all the geometries in `armedconflict_sf` are valid.
+
+```{r}
+length(which(st_is_valid(armedconflict_sf) == TRUE))
+```
+
+### 4.3 Transforming the Projection of the Data
+
+`adminboundaries_sf` and `armedconflict_sf` are projected in the WGS 84 geographic coordinate system, which is not appropriate since the analysis will require distance and area measurements. Reproject both data to the Indian 1954 / UTM zone 46N projected coordinate system, which can be used in Myanmar.
+
+```{r}
+adminboundaries_sf_23946 <- st_transform(adminboundaries_sf, crs = 23946)
+
+armedconflict_sf_23946 <- st_transform(armedconflict_sf, crs = 23946)
+
+```
+
+Check the content of each data frame.
+
+```{r}
+st_geometry(adminboundaries_sf_23946)
+st_geometry(armedconflict_sf_23946)
+```
+
+As desired, they have both been reprojected to the Indian 1954 / UTM zone 46N projected coordinate system.
+
+## 5.0 Data Wrangling
+
+### 5.1 Organising point events data by quarter
+
+To derive quarterly KDE layers, we must first organise the armed conflict events in `armedconflict_sf_23946` by quarter. We use functions from the **dplyr** and **lubridate** packages of the **tidyverse**.
+
+```{r}
+armedconflictquarterly_sf <- armedconflict_sf_23946 %>%
+  mutate("quarter" = quarter(dmy(event_date)))
+
+
+glimpse(armedconflictquarterly_sf)
+```
+
+`armedconflictquarterly_sf` is then broken down into individual data frames for each quarter from 1 January 2021 until 30 June 2024, that is, from Q1 2021 until Q2 2024. Convert each of these data sets to **spatstat**'s ppp object format.
+
+```{r}
+armedconflictQ121_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 1 & year == 2021) %>%
+  as.ppp(.)
+
+armedconflictQ221_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 2 & year == 2021) %>%
+  as.ppp(.)
+
+armedconflictQ321_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 3 & year == 2021) %>%
+  as.ppp(.)
+
+armedconflictQ421_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 4 & year == 2021) %>%
+  as.ppp(.)
+
+armedconflictQ122_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 1 & year == 2022) %>%
+  as.ppp(.)
+
+armedconflictQ222_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 2 & year == 2022) %>%
+  as.ppp(.)
+
+armedconflictQ322_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 3 & year == 2022) %>%
+  as.ppp(.)
+
+armedconflictQ422_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 4 & year == 2022) %>%
+  as.ppp(.)
+
+armedconflictQ123_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 1 & year == 2023) %>%
+  as.ppp(.)
+
+armedconflictQ223_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 2 & year == 2023) %>%
+  as.ppp(.)
+
+armedconflictQ323_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 3 & year == 2023) %>%
+  as.ppp(.)
+
+armedconflictQ423_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 4 & year == 2023) %>%
+  as.ppp(.)
+
+armedconflictQ124_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 1 & year == 2024) %>%
+  as.ppp(.)
+
+armedconflictQ224_ppp <- armedconflictquarterly_sf %>%
+  filter(quarter == 2 & year == 2024) %>%
+  as.ppp(.)
+
+```
+
+### 5.2 Creating owin object
+
+The code chunk below is used to covert `adminboundaries_sf_23946` into an owin object of **spatstat**, allowing the later analysis to be confined to Myanmar's borders.
+
+```{r}
+adminboundaries_owin <- as.owin(adminboundaries_sf_23946)
+plot(adminboundaries_owin)
+```
+
+### 5.3 Combining point events objects and owin object
+
+We then combine both the point events objects and owin object into a single ppp object for each quarter.
+
+```{r}
+armedconflictQ121mm_ppp <- armedconflictQ121_ppp[adminboundaries_owin]
+
+armedconflictQ221mm_ppp <- armedconflictQ221_ppp[adminboundaries_owin]
+
+armedconflictQ321mm_ppp <- armedconflictQ321_ppp[adminboundaries_owin]
+
+armedconflictQ421mm_ppp <- armedconflictQ421_ppp[adminboundaries_owin]
+
+armedconflictQ122mm_ppp <- armedconflictQ122_ppp[adminboundaries_owin]
+
+armedconflictQ222mm_ppp <- armedconflictQ222_ppp[adminboundaries_owin]
+
+armedconflictQ322mm_ppp <- armedconflictQ322_ppp[adminboundaries_owin]
+
+armedconflictQ422mm_ppp <- armedconflictQ422_ppp[adminboundaries_owin]
+
+armedconflictQ123mm_ppp <- armedconflictQ123_ppp[adminboundaries_owin]
+
+armedconflictQ223mm_ppp <- armedconflictQ223_ppp[adminboundaries_owin]
+
+armedconflictQ323mm_ppp <- armedconflictQ323_ppp[adminboundaries_owin]
+
+armedconflictQ423mm_ppp <- armedconflictQ423_ppp[adminboundaries_owin]
+
+armedconflictQ124mm_ppp <- armedconflictQ124_ppp[adminboundaries_owin]
+
+armedconflictQ224mm_ppp <- armedconflictQ224_ppp[adminboundaries_owin]
+```
+
+## 5.1 Kernel Density Estimation
+
+We now try deriving the KDE layers for Q1 2021.
+
+```{r}
+kde_armedconflictQ121mm <- density(armedconflictQ121mm_ppp, sigma = bw.diggle, edge = TRUE, kernel = "quartic")
+
+plot(kde_armedconflictQ121mm)
+```
+
+The density values of the output are extremely small. This is because the default measurement of the Indian 1954 / UTM zone 46N system is in metres. We convert the unit of measurement to kilometers.
+
+```{r}
+armedconflictQ121mm_ppp_km <- rescale.ppp(armedconflictQ121mm_ppp, 1000, "km")
+
+kde_armedconflictQ121mm_km <- density(armedconflictQ121mm_ppp_km, sigma = bw.diggle, edge = TRUE, kernel = "quartic")
+
+plot(kde_armedconflictQ121mm_km)
+```
+
+There is another problem. Apart from a few specks, most of Myanmar is dark. We check the bandwidth derived by the diggle method.
+
+```{r}
+bw.diggle(armedconflictQ121mm_ppp_km)
+```
+
+We may need a larger bandwidth to prevent undersmoothing, particularly given Myanmar's relatively large land area and and the rural nature of most of the country. We try the CvL automatic bandwidth selection method instead.
+
+```{r}
+kde_armedconflictQ121mm_kmCvL <- density(armedconflictQ121mm_ppp_km, sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+plot(kde_armedconflictQ121mm_kmCvL)
+```
+
+We can now clearly identify an area of extremely high intensity in central Myanmar, centered around Yangon Region, Myanmar's most populous region and home to its largest city. Another area with relatively high intensity stretches from southern Kachin State, through northwestern Shan State, Mandalay Region and Sagaing Region
+
+We repeat the process of rescaling the data and deriving KDE layers for every quarter from 1 January 2021 until 30 June 2024.
+
+```{r}
+kde_armedconflictQ221mm_kmCvL <- armedconflictQ221mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+ 
+kde_armedconflictQ321mm_kmCvL <- armedconflictQ321mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ421mm_kmCvL <- armedconflictQ421mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ122mm_kmCvL <- armedconflictQ122mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ222mm_kmCvL <- armedconflictQ222mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ322mm_kmCvL <- armedconflictQ322mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ422mm_kmCvL <- armedconflictQ422mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ123mm_kmCvL <- armedconflictQ123mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ223mm_kmCvL <- armedconflictQ223mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ323mm_kmCvL <- armedconflictQ323mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ423mm_kmCvL <- armedconflictQ423mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ124mm_kmCvL <- armedconflictQ124mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+
+kde_armedconflictQ224mm_kmCvL <- armedconflictQ224mm_ppp %>%
+  rescale.ppp(., 1000, "km") %>%
+  density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
+```
+
+We can now plot these quarterly KDE layers.
+
+```{r}
+plot(kde_armedconflictQ121mm_kmCvL)
+plot(kde_armedconflictQ221mm_kmCvL)
+plot(kde_armedconflictQ321mm_kmCvL)
+plot(kde_armedconflictQ421mm_kmCvL)
+plot(kde_armedconflictQ122mm_kmCvL)
+plot(kde_armedconflictQ222mm_kmCvL)
+plot(kde_armedconflictQ322mm_kmCvL)
+plot(kde_armedconflictQ422mm_kmCvL)
+plot(kde_armedconflictQ123mm_kmCvL)
+plot(kde_armedconflictQ223mm_kmCvL)
+plot(kde_armedconflictQ323mm_kmCvL)
+plot(kde_armedconflictQ423mm_kmCvL)
+plot(kde_armedconflictQ124mm_kmCvL)
+plot(kde_armedconflictQ224mm_kmCvL)
+
+```
+
+## 6.0 **2nd Order Spatial Point Patterns Analysis**
+
+Next, we perform 2nd order spatial point patterns analysis, testing whether the event points in each cluster are clustered, randomly distributed, or dispersed. To do this, we would ideally use the L function, which estimates spatial dependence over a wider range of scales than the G and F functions. However, with a total of 51553 event points across all 14 quarters, this would likely be too computationally demanding and take an extremely long amount of time. Hence, we can use the F function instead.
+
+In the following code chunks, we generate Monte Carlo simulations of the F function under complete spatial randomness for each quarter, and plot the output against the F function derived from the observed data. Through this, we can perform a test of the hypothesis that the distribution of armed conflict events is random in each quarter, with alpha = 2.5%.
+
+We use the *set.seed()* function to ensure that the simulation results are reproducible.
+
+```{r}
+set.seed(5)
+
+armedconflictQ121mm_csr <- envelope(armedconflictQ121mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ121mm_csr)
+```
+
+```{r}
+
+armedconflictQ221mm_csr <- envelope(armedconflictQ221mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ221mm_csr)
+```
+
+```{r}
+armedconflictQ321mm_csr <- envelope(armedconflictQ321mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ321mm_csr)
+```
+
+```{r}
+armedconflictQ421mm_csr <- envelope(armedconflictQ421mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ421mm_csr)
+```
+
+```{r}
+armedconflictQ122mm_csr <- envelope(armedconflictQ122mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ122mm_csr)
+```
+
+```{r}
+armedconflictQ222mm_csr <- envelope(armedconflictQ222mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ222mm_csr)
+```
+
+```{r}
+armedconflictQ322mm_csr <- envelope(armedconflictQ322mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ322mm_csr)
+```
+
+```{r}
+armedconflictQ422mm_csr <- envelope(armedconflictQ422mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ422mm_csr)
+```
+
+```{r}
+armedconflictQ123mm_csr <- envelope(armedconflictQ123mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ123mm_csr)
+```
+
+```{r}
+armedconflictQ223mm_csr <- envelope(armedconflictQ223mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ223mm_csr)
+```
+
+```{r}
+armedconflictQ323mm_csr <- envelope(armedconflictQ323mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ323mm_csr)
+```
+
+```{r}
+armedconflictQ423mm_csr <- envelope(armedconflictQ423mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ423mm_csr)
+```
+
+```{r}
+armedconflictQ124mm_csr <- envelope(armedconflictQ124mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ124mm_csr)
+```
+
+```{r}
+armedconflictQ224mm_csr <- envelope(armedconflictQ224mm_ppp, Fest, nsim = 39, global = TRUE)
+
+plot(armedconflictQ224mm_csr)
+```
