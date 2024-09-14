@@ -225,6 +225,28 @@ armedconflictQ224_ppp <- armedconflictquarterly_sf %>%
 
 ```
 
+Next, we verify the number of locations with more than one point event in each quarter.
+
+```{r}
+
+
+quarterly <- list(armedconflictQ121_ppp, armedconflictQ221_ppp, armedconflictQ321_ppp, armedconflictQ421_ppp, armedconflictQ122_ppp, armedconflictQ222_ppp, armedconflictQ322_ppp, armedconflictQ422_ppp, armedconflictQ123_ppp, armedconflictQ223_ppp, armedconflictQ323_ppp, armedconflictQ423_ppp, armedconflictQ124_ppp, armedconflictQ224_ppp)
+```
+
+```{r}
+
+
+for (i in quarterly) {
+  duplicates <- any(duplicated(i))
+  print(duplicates)
+}
+```
+
+```{r}
+any(duplicated(armedconflictQ121_ppp))
+
+```
+
 ### 5.2 Creating owin object
 
 The code chunk below is used to covert `adminboundaries_sf_23946` into an owin object of **spatstat**, allowing the later analysis to be confined to Myanmar's borders.
