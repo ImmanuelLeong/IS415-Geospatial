@@ -67,6 +67,7 @@ pacman::p_load(tidyverse, sf, spatstat, tmap)
 Import `mmr_polbnda_adm2_250k_mimu` .
 
 ```{r}
+
 adminboundaries_sf <- st_read(dsn = "data", layer = "mmr_polbnda_adm1_250k_mimu_1", as_tibble = TRUE)
 ```
 
@@ -99,6 +100,7 @@ The EPSG code indicated is 4326, which is correct since the data is projected in
 Since `2021-01-01-2024-06-30-Southeast_Asia-Myanmar.csv` is in csv format, we used *read_csv()* of the **readr** package to import it.
 
 ```{r}
+
 armedconflict <- read_csv("data/2021-01-01-2024-06-30-Southeast_Asia-Myanmar.csv")
 
 glimpse(armedconflict)
@@ -228,24 +230,17 @@ armedconflictQ224_ppp <- armedconflictquarterly_sf %>%
 Next, we verify the number of locations with more than one point event in each quarter.
 
 ```{r}
-
-
 quarterly <- list(armedconflictQ121_ppp, armedconflictQ221_ppp, armedconflictQ321_ppp, armedconflictQ421_ppp, armedconflictQ122_ppp, armedconflictQ222_ppp, armedconflictQ322_ppp, armedconflictQ422_ppp, armedconflictQ123_ppp, armedconflictQ223_ppp, armedconflictQ323_ppp, armedconflictQ423_ppp, armedconflictQ124_ppp, armedconflictQ224_ppp)
 ```
 
 ```{r}
-
-
 for (i in quarterly) {
-  duplicates <- any(duplicated(i))
-  print(duplicates)
+  result = sum(multiplicity(i) > 1)
+  print(result)
 }
 ```
 
-```{r}
-any(duplicated(armedconflictQ121_ppp))
-
-```
+The output shows that there are no duplicated point events in any of the quarterly data frames.
 
 ### 5.2 Creating owin object
 
@@ -261,6 +256,8 @@ plot(adminboundaries_owin)
 We then combine both the point events objects and owin object into a single ppp object for each quarter.
 
 ```{r}
+#| eval: false
+
 armedconflictQ121mm_ppp <- armedconflictQ121_ppp[adminboundaries_owin]
 
 armedconflictQ221mm_ppp <- armedconflictQ221_ppp[adminboundaries_owin]
@@ -290,6 +287,75 @@ armedconflictQ124mm_ppp <- armedconflictQ124_ppp[adminboundaries_owin]
 armedconflictQ224mm_ppp <- armedconflictQ224_ppp[adminboundaries_owin]
 ```
 
+We save each of these ppp objects with the *write_rds()* function.
+
+```{r}
+#| eval: false
+
+write_rds(armedconflictQ121mm_ppp, "data/rds/armedconflictQ121mm_ppp.rds")
+
+write_rds(armedconflictQ221mm_ppp, "data/rds/armedconflictQ221mm_ppp.rds")
+
+write_rds(armedconflictQ321mm_ppp, "data/rds/armedconflictQ321mm_ppp.rds")
+
+write_rds(armedconflictQ421mm_ppp, "data/rds/armedconflictQ421mm_ppp.rds")
+
+write_rds(armedconflictQ122mm_ppp, "data/rds/armedconflictQ122mm_ppp.rds")
+
+write_rds(armedconflictQ222mm_ppp, "data/rds/armedconflictQ222mm_ppp.rds")
+
+
+write_rds(armedconflictQ322mm_ppp, "data/rds/armedconflictQ322mm_ppp.rds")
+
+write_rds(armedconflictQ422mm_ppp, "data/rds/armedconflictQ422mm_ppp.rds")
+
+write_rds(armedconflictQ123mm_ppp, "data/rds/armedconflictQ123mm_ppp.rds")
+
+write_rds(armedconflictQ223mm_ppp, "data/rds/armedconflictQ223mm_ppp.rds")
+
+
+write_rds(armedconflictQ323mm_ppp, "data/rds/armedconflictQ323mm_ppp.rds")
+
+write_rds(armedconflictQ423mm_ppp, "data/rds/armedconflictQ423mm_ppp.rds")
+
+write_rds(armedconflictQ124mm_ppp, "data/rds/armedconflictQ124mm_ppp.rds")
+
+write_rds(armedconflictQ224mm_ppp, "data/rds/armedconflictQ224mm_ppp.rds")
+
+```
+
+```{r}
+#| echo: FALSE
+
+armedconflictQ121mm_ppp <- read_rds("data/rds/armedconflictQ121mm_ppp.rds")
+
+armedconflictQ221mm_ppp <- read_rds("data/rds/armedconflictQ221mm_ppp.rds")
+
+armedconflictQ321mm_ppp <- read_rds("data/rds/armedconflictQ321mm_ppp.rds")
+
+armedconflictQ421mm_ppp <- read_rds("data/rds/armedconflictQ421mm_ppp.rds")
+
+armedconflictQ122mm_ppp <- read_rds("data/rds/armedconflictQ122mm_ppp.rds")
+
+armedconflictQ222mm_ppp <- read_rds("data/rds/armedconflictQ222mm_ppp.rds")
+
+armedconflictQ322mm_ppp <- read_rds("data/rds/armedconflictQ322mm_ppp.rds")
+
+armedconflictQ422mm_ppp <- read_rds("data/rds/armedconflictQ422mm_ppp.rds")
+
+armedconflictQ123mm_ppp <- read_rds("data/rds/armedconflictQ123mm_ppp.rds")
+
+armedconflictQ223mm_ppp <- read_rds("data/rds/armedconflictQ223mm_ppp.rds")
+
+armedconflictQ323mm_ppp <- read_rds("data/rds/armedconflictQ323mm_ppp.rds")
+
+armedconflictQ423mm_ppp <- read_rds("data/rds/armedconflictQ423mm_ppp.rds")
+
+armedconflictQ124mm_ppp <- read_rds("data/rds/armedconflictQ124mm_ppp.rds")
+
+armedconflictQ224mm_ppp <- read_rds("data/rds/armedconflictQ224mm_ppp.rds")
+```
+
 ## 5.1 Kernel Density Estimation
 
 We now try deriving the KDE layers for Q1 2021.
@@ -316,7 +382,7 @@ There is another problem. Apart from a few specks, most of Myanmar is dark. We c
 bw.diggle(armedconflictQ121mm_ppp_km)
 ```
 
-We may need a larger bandwidth to prevent undersmoothing, particularly given Myanmar's relatively large land area and and the rural nature of most of the country. We try the CvL automatic bandwidth selection method instead.
+We may need a larger bandwidth to prevent undersmoothing, particularly given Myanmar's relatively large land area and the rural nature of most of the country. We try the CvL automatic bandwidth selection method instead.
 
 ```{r}
 kde_armedconflictQ121mm_kmCvL <- density(armedconflictQ121mm_ppp_km, sigma = bw.CvL, edge = TRUE, kernel = "quartic")
@@ -329,6 +395,8 @@ We can now clearly identify an area of extremely high intensity in central Myanm
 We repeat the process of rescaling the data and deriving KDE layers for every quarter from 1 January 2021 until 30 June 2024.
 
 ```{r}
+#| eval: FALSE
+
 kde_armedconflictQ221mm_kmCvL <- armedconflictQ221mm_ppp %>%
   rescale.ppp(., 1000, "km") %>%
   density(., sigma = bw.CvL, edge = TRUE, kernel = "quartic")
