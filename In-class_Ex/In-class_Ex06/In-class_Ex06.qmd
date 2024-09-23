@@ -1,0 +1,218 @@
+---
+title: "In-Class Exercise 6"
+author: "Immanuel Leong"
+date: "September 23, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+## In-class Exercise 6: Global and Local Measures of Spatial Autocorrelation
+
+-   sfdep package: sf and tidyverse friendly interface to spdep package (allows us to use tibble format); utilises list columns to make this interface possible
+
+### Installing and loading packages
+
+We load sf, sfdep, tmap and tidyverse.
+
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse)
+```
+
+Import the necessary datasets.
+
+```{r}
+hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
+
+hunan <- st_read(dsn = "data/geospatial", layer = "Hunan")
+
+# Should be finding out projections
+```
+
+Combine the data frames.
+
+```{r}
+hunan_GDPPC <- left_join(hunan, hunan2012) %>%
+  select(1:4, 7, 15)
+```
+
+### Global Measures of Spatial Association
+
+**Step 1: Deriving Queen's Contiguity Weights**
+
+```{r}
+wm_q <- hunan_GDPPC %>%
+  mutate(nb = st_contiguity(geometry),
+         wt = st_weights(nb, style = "W"),
+         .before = 1)
+
+#.before = 1 inserts the two new columns to the left of the existing columns
+```
+
+st_contiguity() builds contiguity matrix
+
+st_weights() builds weight matrix based on nb
+
+-   nb: neighbour list object as created by st_neighbors
+
+-   style: default "W" for row-standardised weights (sums over all links to n)
+
+-   allow_zero: if TRUE, assigns zero as lagged value to zone without neighbours
+
+**Computing Global Moran's I**
+
+```{r}
+
+moranI <- global_moran(wm_q$GDPPC, wm_q$nb, wm_q$wt)
+
+glimpse(moranI)
+```
+
+**Performing Global Moran's I Test**
+
+In general, Moran's I test will be performed instead of just computing the Moran's I statistic.
+
+```{r}
+global_moran_test(wm_q$GDPPC, wm_q$nb, wm_q$wt)
+```
+
+At alpha = 0.05, there is sufficient evidence to reject the null hypothesis of a random distribution. Since the Moran I statistic is positive but small, we infer that there is relatively weak clustering.
+
+**Performing Global Moran's Permutation Test**
+
+In practice, Monte Carlo simulation should be used to perform the statistical test. We can skip the previous step and proceed to this immediately. We must use set.seed() before simulation to ensure that the computation is reproducible.
+
+```{r}
+set.seed(1234)
+
+global_moran_perm(wm_q$GDPPC, wm_q$nb, wm_q$wt, nsim = 99)
+```
+
+At alpha = 0.05, there is sufficient evidence to reject the null hypothesis of a random distribution. Since the Moran I statistic is positive but small, we infer that there is relatively weak clustering.
+
+**Computing local Moran's I**
+
+```{r}
+lisa <- wm_q %>%
+  mutate(local_moran = local_moran(GDPPC, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_moran)
+
+
+```
+
+Important output fields:
+
+-   ii: local Moran's I
+
+-   3 different p-values based on 3 different methods (p_ii is base method, p_ii_sim is using simulation (without replacement), p_folded_sim based on simulation with different algorithm (with replacement)) - choose any of these, but be consistent
+
+-   mean, median, pysal: 3 different methods to label hotspots and coldspots - use median if data is highly skewed
+
+**Visualising local Moran's I**
+
+```{r}
+tmap_mode("plot")
+
+map1 <- tm_shape(lisa) +
+  tm_fill("ii") +
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "Local Moran's I of GDPPC", main.title.size = 1)
+```
+
+**Visualising p-value of local Moran's I**
+
+```{r}
+map2 <- tm_shape(lisa) +
+  tm_fill("p_ii_sim", breaks = c(0, 0.001, 0.01, 0.05, 1), labels = c("0.001", "0.01", "0.05", "Not sig")) +
+  tm_borders(alpha = 0.5) +
+  tm_view(set.zoom.limits = c(6,8)) +
+  tm_layout(main.title = "P-values of Local Moran's I of GDPPC", main.title.size = 1)
+  
+tmap_arrange(map1, map2, ncol = 2)
+```
+
+For p-values, the appropriate classification should be 0.001, 0.01, 0.05, and not significant instead of using the default.
+
+**LISA Map**
+
+LISA map is a categorical map showing outliers and clusters.
+
+-   Two types of outliers: High-Low (High surrounded by Low) and Low-High (Low surrounded by High)
+
+-   Two types of clusters: High-High and Low-Low
+
+LISA map is an interpreted map combining local Moran's I of geographical areas and respective p-values
+
+```{r}
+lisa_sig <- lisa %>%
+  filter(p_ii < 0.05)
+
+tmap_mode("plot")
+
+tm_shape(lisa) +
+  tm_polygons() +
+  tm_borders(alpha = 0.5) +
+tm_shape(lisa_sig) +
+  tm_fill("mean") +
+  tm_borders(alpha = 0.4)
+```
+
+**Computing local Gi\* statistics**
+
+As usual, we will need to derive a spatial weight matrix before we can compute local Gi\*
+
+```{r}
+
+wm_idw <- hunan_GDPPC %>%
+  mutate(nb = st_contiguity(geometry),
+         wts = st_inverse_distance(nb, geometry, scale = 1, alpha = 1),
+         .before = 1)
+```
+
+Gi\* and local Gi\* are distance-based spatial statistics. Hence, distance methods should be used to derive the spatial weight matrix.
+
+Next, we compute the local Gi\*
+
+```{r}
+HCSA <- wm_idw %>%
+  mutate(local_Gi = local_gstar_perm(GDPPC, nb, wt, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+HCSA
+```
+
+**Visualising Gi\***
+
+```{r}
+tmap_mode("plot")
+
+tm_shape(HCSA) +
+  tm_fill("gi_star") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "Gi*")
+
+
+```
+
+HCSA uses spatial weights to identify locations of statistically significant hot spots and cold spots in a spatially weighted attribute.
+
+```{r}
+HCSA_sig <- HCSA %>%
+  filter(p_sim < 0.05)
+
+tm_shape(HCSA) +
+  tm_polygons +
+  tm_borders(alpha = 0.5) +
+tm_shape(HCSA_sig) +
+  tm_fill("gi_star") +
+  tm_borders(alpha = 0.4) +
+  tm_layout(main.title = "HCSA")
+```
+
+Figure above reveals there is one hot spot area and two cold spot areas. The hot spot areas coincide with the High-High cluster identified using local Moran's I.
