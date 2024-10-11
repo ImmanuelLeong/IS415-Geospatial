@@ -1,0 +1,721 @@
+---
+title: "Take-Home Exercise 2"
+author: "Immanuel Leong"
+date: "September 25, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+# **Take-home Exercise 2: Application of Geospatial Analysis Methods to Discover Thailand Drug Abuse at the Province Level**
+
+## 1.0 Overview
+
+Drug abuse is associated with significant negative health, financial and social consequences. Yet, illicit drug consumption remains highly prevalent and continues to be a growing problem worldwide. In 2021, 1 in 17 people aged 15–64 in the world had used a drug in the past 12 months. Notwithstanding population growth, the estimated number of drug users grew from 240 million in 2011 to 296 million in 2021.
+
+In Thailand, drug abuse is a major social issue. There are about 2.7 million youths using drugs in Thailand. Among youths aged between 15 and 19 years, there are about 300,000 who have needs for drug treatment. Most of Thai youths involved with drugs are vocational-school students, which nearly doubles in number compared to secondary-school students.
+
+## **1.1 Objectives**
+
+We are interested to discover:
+
+-   if the key indicators of drug abuse of Thailand are independent from space.
+
+-   If the indicators of drug abuse is indeed spatially dependent, then, we would like to detect where are the clusters and outliers, and the hotspots.
+
+-   Last but not least, we are also interested to investigate how the observations above evolve over time.
+
+## 1.2 Task
+
+The specific tasks of this take-home exercise are as follows:
+
+-   Using appropriate function of **sf** and **tidyverse**, preparing the following geospatial data layer:
+
+    -   a study area layer in sf polygon features. It must be at [province level](https://en.wikipedia.org/wiki/Provinces_of_Thailand) (including Bangkok) of Thailand.
+
+    -   a drug abuse indicators layer within the study area in sf polygon features.
+
+-   Using the extracted data, perform global spatial autocorrelation analysis by using [sfdep methods](https://is415-gaa-tskam.netlify.app/in-class_ex/in-class_ex05/in-class_ex05-glsa).
+
+-   Using the extracted data, perform local spatial autocorrelation analysis by using [sfdep methods](https://r4gdsa.netlify.app/chap10.html).
+
+-   Describe the spatial patterns revealed by the analysis above.
+
+## 2.0 Data
+
+The following two data sets will be used:
+
+-   `thai_drug_offenses_2017_2022.csv` This dataset presents statistics related to different types of drug offenses in Thailand, categorized by fiscal year, and provides insights into the prevalence of various drug-related cases and their distribution across different provinces. It was downloaded from <https://www.kaggle.com/datasets/thaweewatboy/thailand-drug-offenses-2017-2022>.
+
+-   `tha_admbnda_adm1_rtsd_20220121` This dataset provides information on Thailand province boundaries in shapefile format. It was downloaded from the [Humanitarian Data Exchange](#0), a service provided by the United Nations Office for the Coordination of Humanitarian Affairs (OCHA).
+
+## 3.0 Setup
+
+For this exercise, the following R packages are used:
+
+-   [**tidyverse**](https://www.tidyverse.org/), a collection of R packages designed for data science, and which provides functions to import, transform, and visualise the data.
+
+-   [**sf**](https://r-spatial.github.io/sf/), to import, manage and process vector-based geospatial data in R.
+
+-   [**sfdep**](https://cran.r-project.org/web/packages/sfdep/index.html), which creates an sf and tidyverse friendly interface to the **spdep** package that is used to compute spatial weights, global and local spatial autocorrelation statistics
+
+-   [**tmap**](https://cran.r-project.org/web/packages/tmap/index.html)**,** which provides functions for plotting cartographic quality choropleth maps.
+
+-   [**Kendall**](https://cran.r-project.org/web/packages/Kendall/index.html), which computes the Kendall rank correlation and Mann-Kendall trend test. This will be necessary for us to perform emerging hot spot analysis.
+
+```{r}
+pacman::p_load(tidyverse, sf, sfdep, tmap, Kendall)
+```
+
+## 4.0 Importing the Data
+
+### 4.1 Importing Spatial Data
+
+Import `tha_admbnda_adm1_rtsd_20220121` as a simple features object, which we name `thailand`.
+
+```{r}
+#| eval: FALSE
+
+thailand <- st_read(dsn = "data/geospatial", layer = "tha_admbnda_adm1_rtsd_20220121")
+```
+
+`thailand` has a total of 77 features, and is projected in WGS 84.
+
+We save `thailand` with the *write_rds()* function.
+
+```{r}
+#| eval: FALSE
+
+write_rds(thailand, "data/rds/thailand.rds")
+```
+
+```{r}
+#| echo: FALSE
+
+thailand <- read_rds("data/rds/thailand.rds")
+```
+
+Verify that all the geometries in `thailand` are valid.
+
+```{r}
+length(which(st_is_valid(thailand) == TRUE))
+```
+
+Sometimes, when importing geospatial data into R, the coordinate system of the source data is wrongly assigned during the importing process. Check the CRS of `thailand`.
+
+```{r}
+st_crs(thailand)
+```
+
+The EPSG code indicated is 4326, which is correct since the data is projected in WGS 84.
+
+### 4.2 Importing Aspatial Data
+
+Since `thai_drug_offenses_2017_2022.csv` is in csv format, we used *read_csv()* of the **readr** package (part of the **tidyverse)** to import it.
+
+```{r}
+drugs <- read_csv("data/aspatial/thai_drug_offenses_2017_2022.csv")
+
+glimpse(drugs)
+```
+
+The data on the number of drug-related cases in `drugs` is categorized by fiscal year, type of drug offense, and province. We derive the total number of drug-related cases in each province, in each fiscal year, using *group_by()* and *summarize()* of **dplyr** (part of the **tidyverse)**.
+
+```{r}
+drugs_all <- drugs %>% 
+  group_by(fiscal_year, province_en, province_th) %>%
+  summarize(cases = sum(no_cases))
+
+glimpse(drugs_all)
+```
+
+Next, we use *pivot_wider()* of **dplyr** so that each row contains the data for a single province, and each column contains the data for a single fiscal year.
+
+```{r}
+drugs_all1 <- drugs_all %>%
+  pivot_wider(names_from = "fiscal_year", values_from = "cases")
+
+glimpse(drugs_all1)
+```
+
+## 4.3 **Performing relational join**
+
+The code chunk below will be used to update the attribute table of `thailand` with the attribute fields of the`drugs_all1` dataframe, retaining only the relevant columns. This is performed by using *inner_join()* of **dplyr** package. We join the data frames on the English-language names of each province.
+
+```{r}
+thailand_drugs <- left_join(thailand, drugs_all1, by = c("ADM1_EN" = "province_en")) %>%
+  select(3, 18:24)
+
+glimpse(thailand_drugs)
+```
+
+There are 77 rows, corresponding to Thailand's 77 provinces (including Bangkok). However, on further examination, we notice that values from `drugs_all1` are missing for two provinces: Lop Buri and Buengkan.
+
+This is due to a discrepancy in the English-language transcriptions of these 2 provinces in `drugsall1` and `thailand`. To solve this, we join the two data frames using the Thai-language province names instead.
+
+```{r}
+thailand_drugs <- left_join(thailand, drugs_all1, by = c("ADM1_TH" = "province_th")) %>%
+  select(3, 18:24)
+
+glimpse(thailand_drugs)
+```
+
+The values for all provinces are now reflected.
+
+## 4.4 Visualising Drug Abuse Indicators
+
+We can now plot a choropleth map showing the distribution of drug-related cases in Thailand by province for each year between 2017 and 2022, using the **tmap** package.
+
+```{r}
+tmap_mode("plot")
+
+thailand_2017 <- tm_shape(thailand_drugs) +
+  tm_fill("2017",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+thailand_2018 <- tm_shape(thailand_drugs) +
+  tm_fill("2018",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+thailand_2019 <- tm_shape(thailand_drugs) +
+  tm_fill("2019",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+thailand_2020 <- tm_shape(thailand_drugs) +
+  tm_fill("2020",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+thailand_2021 <- tm_shape(thailand_drugs) +
+  tm_fill("2021",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+thailand_2022 <- tm_shape(thailand_drugs) +
+  tm_fill("2022",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE)
+
+tmap_arrange(thailand_2017, thailand_2018, thailand_2019, thailand_2020, thailand_2021, thailand_2022, asp = 1, nrow = 2)
+```
+
+## **5.0 Global Measures of Spatial Autocorrelation**
+
+In this section, we compute global spatial autocorrelation statistics and perform spatial complete randomness test for global spatial autocorrelation.
+
+### **5.1 Computing Contiguity Spatial Weights**
+
+Before we can compute the global spatial autocorrelation statistics, we need to construct a spatial weights matrix of the study area. The spatial weights matrix is used to define the neighbourhood relationships between the provinces.
+
+In the code chunk below, *st_contiguity()* of **sfdep** is used to compute a contiguity weight matrix. This function builds a neighbours list `nb` based on provinces with contiguous boundaries. We use the Queen criteria to calculate our neighbours list.
+
+Then, *st_weights()* is used to to assign weights to neighboring polygons. We use row-standardised weights (style = "W"). This means that for each province *i*, each neighbouring province is assigned an equal weight of 1/(number of neighbours of *i*). The spatially lagged drug-related case count of province *i* is calculated by summing the weighted case count values of its neighbours.
+
+```{r}
+wm_q <- thailand_drugs %>%
+  mutate(nb = st_contiguity(geometry, queen = TRUE),
+         wt = st_weights(nb, style = "W", allow_zero = TRUE),
+         .before = 1)
+
+wm_q
+```
+
+Notice a warning message that some observations have no neighbours. Examining `wm_q`, this is due to the province of Phuket, which consists of islands and does not have contiguous boundaries with any other province.
+
+### **5.2 Global Measures of Spatial Autocorrelation: Moran's I**
+
+#### 5.2.1 Computing Global Moran’ I
+
+In the code chunk below, *global_moran()* is used to compute the Moran’s I value for each year. The global Moran's I value measures spatial autocorrelation for the entire study area.
+
+```{r}
+
+moranI_2017 <- global_moran(wm_q$"2017",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+moranI_2018 <- global_moran(wm_q$"2018",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+moranI_2019 <- global_moran(wm_q$"2019",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+
+moranI_2020 <- global_moran(wm_q$"2020",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+
+moranI_2021 <- global_moran(wm_q$"2021",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+
+moranI_2022 <- global_moran(wm_q$"2022",
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+```
+
+```{r}
+glimpse(moranI_2017)
+glimpse(moranI_2018)
+glimpse(moranI_2019)
+glimpse(moranI_2020)
+glimpse(moranI_2021)
+glimpse(moranI_2022)
+```
+
+Since the computed global Moran's I values are close to zero in every year, it appears that drug-related case levels are distributed randomly over space in Thailand and there is no spatial autocorrelation.
+
+#### 5.2.2 Performing Global Moran’s I Permutation test
+
+For a more rigorous analysis, we perform a statistical test using Monte Carlo simulation. This is done using *global_moran_perm().* To ensure reproducibility, we set a seed before performing the simulations.
+
+```{r}
+
+set.seed(1234)
+
+global_moran_perm(wm_q$"2017", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(wm_q$"2018", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(wm_q$"2019", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(wm_q$"2020", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(wm_q$"2021", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(wm_q$"2022", wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+```
+
+At alpha = 0.05, the p-values in every year other than 2019 are smaller than the alpha value, which means that for these years, we have enough statistical evidence to reject the null hypothesis that the spatial distribution of drug-related case levels is random. Since the Moran’s I statistics is greater than 0, we infer that the spatial distribution shows signs of clustering in all the years apart from 2019 (i.e. in these years, provinces with similar drug-related case levels are likely to be clustered together).
+
+On the other hand, the p-value in 2019 is larger than the alpha value of 0.05, which means that we do not have enough evidence to reject the null hypothesis that the spatial distribution of drug-related case levels is random for 2019.
+
+### **5.3 Global Measures of Spatial Autocorrelation: Geary’s C**
+
+We can perform the simulations using the Geary's C statistic instead.
+
+```{r}
+
+global_c_perm(wm_q$"2017", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+global_c_perm(wm_q$"2018", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+global_c_perm(wm_q$"2019", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+global_c_perm(wm_q$"2020", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+global_c_perm(wm_q$"2021", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+global_c_perm(wm_q$"2022", wm_q$nb, wm_q$wt, nsim = 99, allow_zero = TRUE)
+
+
+```
+
+In contrast to simulations of the global Moran's I statistics, the p-values are larger than the alpha value of 0.05 in every year, which means that we do not have enough evidence to reject the null hypothesis that the spatial distribution of drug-related case levels is random.
+
+## **6.0 Local Measures of Spatial Autocorrelation**
+
+Local Measures of Spatial Autocorrelation (LMSA) focus on the relationships between each observation and its surroundings, rather than providing a single summary of these relationships across the entire study area.
+
+Given a set of geospatial features and an analysis field, the spatial statistics identify spatial clusters of features with high or low values, as well as outliers.
+
+### 6.1 Local **Measures of Spatial Autocorrelation: Moran's I**
+
+#### 6.1.1 **Computing Local Moran's I**
+
+Local Moran’s I is the most popular spatial statistical method used. We compute Local Moran’s I drug-related case levels at the provincial level for each year by using *local.moran()* of **sfdep**.
+
+```{r}
+lisa2017 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2017", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2017 %>% filter(p_ii < 0.05)
+```
+
+```{r}
+lisa2018 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2018", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2018 %>% filter(p_ii < 0.05)
+```
+
+```{r}
+lisa2019 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2019", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2019 %>% filter(p_ii < 0.05)
+```
+
+```{r}
+lisa2020 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2020", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2020 %>% filter(p_ii < 0.05)
+```
+
+```{r}
+lisa2021 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2021", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2021 %>% filter(p_ii < 0.05)
+```
+
+```{r}
+lisa2022 <- wm_q %>% 
+  mutate(local_moran = local_moran(.$"2022", nb, wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa2022 %>% filter(p_ii < 0.05)
+```
+
+#### 6.1.2 **Visualising Local Moran's I**
+
+Using the following code, we can visualise the significant clusters and outliers on a map for each year.
+
+```{r}
+lisa2017_sig <- lisa2017 %>%
+  filter(p_ii < 0.05)
+
+lisa2017map <- tm_shape(lisa2017) +
+  tm_polygons() +
+tm_shape(lisa2017_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+lisa2018_sig <- lisa2018 %>%
+  filter(p_ii < 0.05)
+
+lisa2018map <- tm_shape(lisa2018) +
+  tm_polygons() +
+tm_shape(lisa2018_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+lisa2019_sig <- lisa2019 %>%
+  filter(p_ii < 0.05) 
+
+lisa2019map <- tm_shape(lisa2019) +
+  tm_polygons() +
+tm_shape(lisa2019_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+lisa2020_sig <- lisa2020 %>%
+  filter(p_ii < 0.05)
+
+lisa2020map <- tm_shape(lisa2020) +
+  tm_polygons() +
+tm_shape(lisa2020_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+lisa2021_sig <- lisa2021 %>%
+  filter(p_ii < 0.05)
+
+lisa2021map <- tm_shape(lisa2021) +
+  tm_polygons() +
+tm_shape(lisa2021_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+lisa2022_sig <- lisa2022 %>%
+  filter(p_ii < 0.05)
+
+lisa2022map <- tm_shape(lisa2022) +
+  tm_polygons() +
+tm_shape(lisa2022_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5)
+
+tmap_arrange(lisa2017map, lisa2018map, lisa2019map, lisa2020map, lisa2021map, lisa2022map, asp = 1, nrow = 2)
+```
+
+From the maps, we can see that in 2017, there were two significant High-High clusters (consisting of provinces that, similar to their neighbours, had high drug-related case levels), located in Southern and Central Thailand respectively. The cluster in Central Thailand, including provinces like Chachoengsao and Chonburi, continues to be significant until 2020.
+
+Throughout this period, Samut Sakhon province, also in Central Thailand, is a notable outlier, having relatively low drug-related case levels in contrast to its neighbours.
+
+In 2021, a significant Low-Low cluster emerges in Western Thailand.
+
+In 2022, a significant High-High cluster in Northeastern Thailand emerges, consisting of provinces such as Khon Kaen and Udon Thani, and comprising a much larger area than the clusters previously identified. Statistically significant spatial autocorrelation in drug abuse levels had not previously been observed in this region, and this new trend is concerning as it suggests that there are some recently-emerged factors facilitating the spread of drug abuse here.
+
+### 6.2 Hot and Cold Spot Analysis
+
+An alternative spatial statistics to detect spatial anomalies is the Getis and Ord’s Gi\* statistics (Getis and Ord, 1972; Ord and Getis, 1995). It looks at neighbours within a defined proximity to identify where either high or low values clutser spatially. Here, statistically significant hot-spots are recognised as areas of high values where other areas within a neighbourhood range also share high values.
+
+### 6.2.1 **Computing Inverse Distance Weights**
+
+As usual, we will need to derive a spatial weight matrix before we can compute local Gi\* statistics. Code chunk below will be used to derive a spatial weight matrix by using sfdep functions and tidyverse approach.
+
+```{r}
+
+wm_idw <- thailand_drugs %>%
+  mutate(nb = st_contiguity(geometry),
+         wts = st_inverse_distance(nb, geometry, scale = 1, alpha = 1),
+         .before = 1)
+```
+
+We proceed to compute the local Gi\* statistics for each year.
+
+```{r}
+
+HCSA2017 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2017", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+
+HCSA2018 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2018", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+
+HCSA2019 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2019", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+
+HCSA2020 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2020", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+
+HCSA2021 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2021", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+
+HCSA2022 <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    .$"2022", nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+```
+
+By mapping the local Gi\* statistics, we can identify hot spot and cold spot areas. A hot spot area is an area where where features with high values (i.e. hot spots) cluster spatially, while a low spot area is one where features with low values (cold spots) cluster spatially. Unlike when we use the local Moran's I statistic, outliers are not identified. Moreover, unlike the local Moran's I statistic,
+
+We focus only on plotting the significant hot spot and cold spot areas, where p_sim \< 0.05.
+
+```{r}
+
+HCSA2017_sig <- HCSA2017 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2017_map <- tm_shape(HCSA2017) +
+  tm_polygons() +
+tm_shape(HCSA2017_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2018_sig <- HCSA2018 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2018_map <- tm_shape(HCSA2018) +
+  tm_polygons() +
+tm_shape(HCSA2018_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2019_sig <- HCSA2019 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2019_map <- tm_shape(HCSA2019) +
+  tm_polygons() +
+tm_shape(HCSA2019_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2019_sig <- HCSA2019 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2019_map <- tm_shape(HCSA2019) +
+  tm_polygons() +
+tm_shape(HCSA2019_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2020_sig <- HCSA2020 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2020_map <- tm_shape(HCSA2020) +
+  tm_polygons() +
+tm_shape(HCSA2020_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2020_sig <- HCSA2020 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2020_map <- tm_shape(HCSA2020) +
+  tm_polygons() +
+tm_shape(HCSA2020_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2021_sig <- HCSA2021 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2021_map <- tm_shape(HCSA2021) +
+  tm_polygons() +
+tm_shape(HCSA2021_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+HCSA2022_sig <- HCSA2022 %>%
+  filter(p_sim < 0.05)
+  
+HCSA2022_map <- tm_shape(HCSA2022) +
+  tm_polygons() +
+tm_shape(HCSA2022_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5)
+
+```
+
+```{r}
+tmap_arrange(HCSA2017_map, HCSA2018_map, HCSA2019_map, HCSA2020_map, HCSA2021_map, HCSA2022_map, asp = 1, nrow = 2)
+```
+
+Somewhat similar patterns can be seen as before, when we used the local Moran's I method. For example, we observe the emergence of a significant cold spot area in Western Thailand in 2021, and a hot spot area in Northeastern Thailand in 2022.
+
+## **7.0 Emerging Hot Spot Analysis**
+
+Emerging hot spot analysis (EHSA) allows us to evaluate how hot and cold spots are changing over time. It combines the traditional exploratory spatial data analysis technique of hot spot analysis using the Getis-Ord Gi\* statistic with the traditional time-series Mann-Kendall test for monotonic trends.
+
+We will perform EHSA analysis by using *emerging_hotspot_analysis()*. This requires us to first create a spacetime object. The following steps are inspired by a previous student in this course, [Khant (2024)](#0).
+
+There are four important data required to create the spacetime object:
+
+-   **data**: a tibble data frame object containing location and time identifiers
+
+-   **geometry**: an sf object containing location identifiers
+
+-   **location identifier**: a common column between data and geometry
+
+-   **time**: a column in data that includes temporal information.
+
+To achieve this, we first use the *pivot_longer()* function of **dplyr** to transform `thailand_drugs` into a tibble data frame `data` with a single column each for the location identifers (ADM1_EN) and time identifiers (year). Here, the argument names_transform is used to ensure that the year column is of integer type.
+
+```{r}
+data <- thailand_drugs %>% 
+  pivot_longer(cols = 2:7, names_to = "year", values_to = "cases", names_transform = list(year = as.integer)) %>%
+  select(ADM1_EN, year, cases) %>%
+  as_tibble()
+```
+
+We can now create the spacetime object using the *spacetime()* function of **sfdep**.
+
+```{r}
+spt <- spacetime (.data = data, .geometry = thailand, .loc_col = "ADM1_EN", .time_col = "year")
+```
+
+[A spacetime object is a spacetime cube if every location has a value for every time index](https://sfdep.josiahparry.com/articles/spacetime-s3.html#spatio-temporal-grids-and-spacetime). We use [*is_spacetime_cube()*](https://sfdep.josiahparry.com/reference/is_spacetime_cube) to very that our newly created `spt` object is a spacetime cube, and *validate_spacetime()* to ensure that it is validly constructed.
+
+```{r}
+
+is_spacetime_cube(spt)
+```
+
+We can perform the EHSA analysis.
+
+```{r}
+ehsa <- emerging_hotspot_analysis(
+  x = spt, 
+  .var = "cases", 
+  k = 1, 
+  nsim = 99,
+  threshold = 0.05
+)
+
+glimpse(ehsa)
+```
+
+```{r}
+ggplot(data = ehsa, aes(y = classification)) +
+  geom_bar(aes(fill = classification))
+```
+
+We can see that most provinces have no pattern detected, while sporadic coldspots and sporadic hotspots are tied as the next most common class of provinces. Although a total of 11 classes of coldspots and hotspots are identified, relatively few provinces fall into the remaining 9 classes.
+
+We can further limit our observations to provinces that fall into an EHSA class with p-value \< 0.05.
+
+```{r}
+ggplot(data = filter(ehsa, p_value < 0.05), aes(y = classification)) +
+  geom_bar(aes(fill = classification))
+```
+
+As we can see, most of our observations from before were not statistically significant. Only 5 classes of hotspots and coldspots remain: consecutive coldspots and sporadic coldspots (2 each), and new hotspot, intensifying hotspot, and intensifying coldspot (1 each).
+
+We visualise these on a map using functions of the **tmap** package.
+
+```{r}
+ehsa_map <- thailand_drugs %>%
+  left_join(filter(ehsa, p_value < 0.05), by = c("ADM1_EN" = "location"))
+
+tm_shape(ehsa_map) +
+  tm_fill("classification") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(main.title = "Emerging Hotspots & Coldspots \nof Drug Abuse in Thailand",
+            main.title.position = "center",
+            main.title.size = 1,
+            legend.text.size = 0.45,
+            legend.height = 0.5, 
+            legend.width = 0.5, 
+            asp = 1,
+            frame = TRUE)
+```
