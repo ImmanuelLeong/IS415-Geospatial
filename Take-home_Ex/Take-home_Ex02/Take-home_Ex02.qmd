@@ -74,10 +74,10 @@ pacman::p_load(tidyverse, sf, sfdep, tmap, Kendall)
 
 ### 4.1 Importing Spatial Data
 
-Import `tha_admbnda_adm1_rtsd_20220121` as a simple features object, which we name `thailand`.
+Import `tha_admbnda_adm1_rtsd_20220121` as a simple features object, which we name `thailand`. This is the required study area layer in sf polygon feature format.
 
 ```{r}
-#| eval: FALSE
+#|eval: FALSE
 
 thailand <- st_read(dsn = "data/geospatial", layer = "tha_admbnda_adm1_rtsd_20220121")
 ```
@@ -163,7 +163,7 @@ thailand_drugs <- left_join(thailand, drugs_all1, by = c("ADM1_TH" = "province_t
 glimpse(thailand_drugs)
 ```
 
-The values for all provinces are now reflected.
+The values for all provinces are now reflected. As required, we have now obtained a drug abuse indicators layer within the study area in sf polygon feature format.
 
 ## 4.4 Visualising Drug Abuse Indicators
 
@@ -515,6 +515,8 @@ wm_idw <- thailand_drugs %>%
          .before = 1)
 ```
 
+### 6.2.2 **Computing and Visualising Gi\* Statistics**
+
 We proceed to compute the local Gi\* statistics for each year.
 
 ```{r}
@@ -564,7 +566,7 @@ HCSA2022 <- wm_idw %>%
 
 ```
 
-By mapping the local Gi\* statistics, we can identify hot spot and cold spot areas. A hot spot area is an area where where features with high values (i.e. hot spots) cluster spatially, while a low spot area is one where features with low values (cold spots) cluster spatially. Unlike when we use the local Moran's I statistic, outliers are not identified. Moreover, unlike the local Moran's I statistic,
+By mapping the local Gi\* statistics, we can identify hot spot and cold spot areas. A hot spot area is an area where where features with high values (i.e. hot spots) cluster spatially, while a low spot area is one where features with low values (cold spots) cluster spatially. Unlike when we use the local Moran's I statistic, outliers are not identified.
 
 We focus only on plotting the significant hot spot and cold spot areas, where p_sim \< 0.05.
 
@@ -681,7 +683,7 @@ We can now create the spacetime object using the *spacetime()* function of **sfd
 spt <- spacetime (.data = data, .geometry = thailand, .loc_col = "ADM1_EN", .time_col = "year")
 ```
 
-[A spacetime object is a spacetime cube if every location has a value for every time index](https://sfdep.josiahparry.com/articles/spacetime-s3.html#spatio-temporal-grids-and-spacetime). We use [*is_spacetime_cube()*](https://sfdep.josiahparry.com/reference/is_spacetime_cube) to very that our newly created `spt` object is a spacetime cube, and *validate_spacetime()* to ensure that it is validly constructed.
+[A spacetime object is a spacetime cube if every location has a value for every time index](https://sfdep.josiahparry.com/articles/spacetime-s3.html#spatio-temporal-grids-and-spacetime). We use [*is_spacetime_cube()*](https://sfdep.josiahparry.com/reference/is_spacetime_cube) to very that our newly created `spt` object is a spacetime cube.
 
 ```{r}
 
@@ -736,3 +738,206 @@ tm_shape(ehsa_map) +
             asp = 1,
             frame = TRUE)
 ```
+
+## **8.0 Conducting a Two-Period Analysis**
+
+Having performed the EHSA, we do not observe many statistically significant emerging hotspots or coldspots. One possible reason is that the length of each time period (1 year) is too short for clear spatial patterns to be observed. The fact that most of the calculated global and local spatial autocorrelation statistics in Parts 5 and 6 were not statistically significant also suggest that this might be a problem.
+
+Moreover, if our time period used is too short, the year-to-year variation may create too much noise in our data.
+
+We repeat Part 5 and 6, this time using a time period of 3 years as our period of analysis. Hopefully, this will reduce the amount of noise in the data and allow us to have more meaningful findings.
+
+The following code chunk creates 2 new columns in `thailand_drugs`, `sum1` and `sum2` . These are the aggregate counts of drug-related cases in each province from 2017-2019 and 2020-2022 respectively.
+
+```{r}
+thailand_drugs_sum <- thailand_drugs %>%
+  mutate(sum1 = rowSums(across(2:4)), sum2 = rowSums(across(5:7))) %>%
+  select(1, 8, 9, 10)
+```
+
+### 8.1 Global Measures of Spatial Autocorrelation
+
+#### 8.1.1 Computing Global Moran’ I
+
+In the code chunk below, *global_moran()* is used to compute the Moran’s I value for each time period. The global Moran's I value measures spatial autocorrelation for the entire study area. We reuse the contiguity weight matrix derived from before in Part 5, `wm_q`.
+
+```{r}
+moranI_before <- global_moran(thailand_drugs_sum$sum1,
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+
+moranI_after <- global_moran(thailand_drugs_sum$sum2,
+                       wm_q$nb,
+                       wm_q$wt,
+                       zero.policy = TRUE)
+```
+
+```{r}
+glimpse(moranI_before)
+glimpse(moranI_after)
+```
+
+Similar to what we found earlier, the computed global Moran's I values are close to zero in both time periods, meaning that in both time periods, it appears that drug-related case levels are distributed randomly over space in Thailand and there is no spatial autocorrelation.
+
+#### 8.1.2 Performing Global Moran’s I Permutation test
+
+For a more rigorous analysis, we perform a statistical test using Monte Carlo simulation. This is done using *global_moran_perm().* To ensure reproducibility, we set a seed before performing the simulations.
+
+```{r}
+set.seed(1234)
+
+global_moran_perm(thailand_drugs_sum$sum1, wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+
+global_moran_perm(thailand_drugs_sum$sum2, wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE)
+```
+
+At alpha = 0.05, the p-value in the first time period (2017-2019) is smaller than the alpha value, which means that for this period, we have enough statistical evidence to reject the null hypothesis that the spatial distribution of drug-related case levels is random. Since the Moran’s I statistics is greater than 0, we infer that the spatial distribution shows signs of clustering in this period.
+
+On the other hand, the p-value in the second time period (2020-2022) is larger than the alpha value of 0.05, which means that we do not have enough evidence to reject the null hypothesis that the spatial distribution of drug-related case levels in the second period is random.
+
+### 8.2 Local **Measures of Spatial Autocorrelation: Moran's I**
+
+We compute Local Moran’s I drug-related case levels at the provincial level for each period by using *local.moran()* of **sfdep**.
+
+```{r}
+set.seed(1234)
+
+lisa_before <- thailand_drugs_sum %>% 
+  mutate(local_moran = local_moran(.$sum1, wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa_before %>% filter(p_ii < 0.05)
+```
+
+```{r}
+set.seed(1234)
+
+lisa_after <- thailand_drugs_sum %>% 
+  mutate(local_moran = local_moran(.$sum2, wm_q$nb, wm_q$wt, nsim = 99, zero.policy = TRUE),
+         .before = 1) %>%
+  unnest(local_moran) %>%
+  select(ii, p_ii, median, ADM1_EN, geometry)
+
+lisa_after %>% filter(p_ii < 0.05)
+```
+
+Using the following code, we can visualise the significant clusters and outliers on a map for each time period.
+
+```{r}
+lisa_before_sig <- lisa_before %>%
+  filter(p_ii < 0.05)
+
+lisa_before_map <- tm_shape(lisa_before) +
+  tm_polygons() +
+tm_shape(lisa_before_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.text.size = 0.5)
+
+lisa_after_sig <- lisa_after %>%
+  filter(p_ii < 0.05)
+
+lisa_after_map <- tm_shape(lisa_after) +
+  tm_polygons() +
+tm_shape(lisa_after_sig) +
+  tm_fill("median") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.text.size = 0.5)
+
+tmap_arrange(lisa_before_map, lisa_after_map)
+```
+
+### 8.3 Hot and Cold Spot Analysis
+
+Next, we perform hot and cold spot analysis in the same way as in Part 6. We reuse the distance weight matrix `wm_idw` obtained in Part 6.
+
+```{r}
+set.seed(1234)
+
+HCSAbefore <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    thailand_drugs_sum$sum1, nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+HCSAafter <- wm_idw %>% 
+  mutate(local_Gi = local_gstar_perm(
+    thailand_drugs_sum$sum2, nb, wts, nsim = 99),
+         .before = 1) %>%
+  unnest(local_Gi)
+
+HCSAbefore_sig <- HCSAbefore %>%
+  filter(p_sim < 0.05)
+  
+HCSAbefore_map <- tm_shape(HCSAbefore) +
+  tm_polygons() +
+tm_shape(HCSAbefore_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.text.size = 0.5)
+
+HCSAafter_sig <- HCSAafter %>%
+  filter(p_sim < 0.05)
+  
+HCSAafter_map <- tm_shape(HCSAafter) +
+  tm_polygons() +
+tm_shape(HCSAafter_sig) +
+  tm_fill("cluster") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.text.size = 0.5)
+
+tmap_arrange(HCSAbefore_map, HCSAafter_map)
+```
+
+An interesting finding from these maps is that Samut Prakan province in central Thailand (part of the Bangkok metropolitan area) is a significant hotspot of drug abuse in both time periods, and this is consistent with what is observed in the LISA maps plotted in the previous section.
+
+In contrast, and counterintuitively, although neighbouring Bangkok has the highest raw drug-related case counts in both periods (as shown by the output of the following code chunk), it does not appear as a significant hotspot or exhibit statistically significant clustering.
+
+```{r}
+thailand_drugs_sum %>%
+  arrange(desc(sum1)) %>%
+  head(1)
+
+thailand_drugs_sum %>%
+  arrange(desc(sum2)) %>%
+  head(1)
+```
+
+To investigate further, we plot a choropleth map showing the distribution of drug-related cases in Thailand by province again, this time for the two time periods 2017-2019 and 2020-2022.
+
+```{r}
+
+tmap_mode("plot")
+
+thailand_before <- tm_shape(thailand_drugs_sum) +
+  tm_fill("sum1",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5,  frame = TRUE) +
+  tm_layout(legend.text.size = 0.5)
+
+thailand_after <- tm_shape(thailand_drugs_sum) +
+  tm_fill("sum2",
+          n = 5,
+          style = "quantile") +
+  tm_borders(alpha = 0.5) +
+  tm_layout(legend.height = 0.45, legend.width = 0.5, frame = TRUE) + tm_layout(legend.text.size = 0.5)
+
+tmap_arrange(thailand_before, thailand_after)
+```
+
+A possible explanation for this is that Bangkok has 6 neighbouring provinces, one of which is Samut Sakhon, which consistently ranks in the bottom quantile for level of drug-related cases.
+
+On the other hand, Samut Prakan only has 2 neighbouring provinces, one of which is Bangkok (as mentioned, the province with the highest level of drug-related cases in both periods) and the other is Chachoengsao (in second-highest quantile in both periods).
+
+It is important to remember that the LISA statistics for each observation give an indication of the extent of significant spatial clustering of similar values around that observation (Anselin, L., 1995). In other words, they depend not only on the value of the observation itself, but also the neighbouring observations.
+
+Hence, unlike Samut Prakan, which has high levels of drug-related cases and is only surrounded by neighbours with similarly high or higher levels, Bangkok's LISA statistics may be "dragged" downwards by a neighbour (Samut Sakhon) with an extremely low level of drug-related cases, despite its own extremely high level of drug-related cases.
+
+It seems that the presence outliers can make it difficult for us to identify significant clustering/hotspot and coldspot areas, and we may consider adjusting our analysis accordingly (for example, by relaxing our requirements for statistical significance) in future studies.
+
+Another limitation of this study is that the drug abuse indicators used in this analysis (absolute number of drug-related cases) are not normalised by the population size of each province, which means that variations between provinces may reflect differences in population and not just differences in the prevalence of drug abuse.
