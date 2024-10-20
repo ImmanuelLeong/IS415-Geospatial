@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Immanuel Leong">
+<meta name="dcterms.date" content="2024-09-20">
+
+<title>Take-Home Exercise 3 – IS415-Geospatial</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="dark">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">IS415-Geospatial</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-hands-on-exercise" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Hands-on Exercise</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-hands-on-exercise">    
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex01/Hands-on_Ex01.html">
+ <span class="dropdown-text">Hands-on Exercise 1</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html">
+ <span class="dropdown-text">Hands-on Exercise 2</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex03.html">
+ <span class="dropdown-text">Hands-on Exercise 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex05/Hands-on_Ex05.html">
+ <span class="dropdown-text">Hands-on Exercise 5</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex06/Hands-on_Ex06.html">
+ <span class="dropdown-text">Hands-on Exercise 6</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex07/Hands-on_Ex07.html">
+ <span class="dropdown-text">Hands-on Exercise 7</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex08/Hands-on_Ex08.html">
+ <span class="dropdown-text">Hands-on Exercise 8</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-in-class-exercise" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">In-class Exercise</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-in-class-exercise">    
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex02/In-class_Ex02.html">
+ <span class="dropdown-text">In-class Exercise 2</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex03/In-class_Ex03.html">
+ <span class="dropdown-text">In-class Exercise 3</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex04/In-class_Ex04.html">
+ <span class="dropdown-text">In-class Exercise 4</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex05/In-class_Ex05.html">
+ <span class="dropdown-text">In-class Exercise 5</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../In-class_Ex/In-class_Ex06/In-class_Ex06.html">
+ <span class="dropdown-text">In-class Exercise 6</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-take-home-exercise" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Take-home Exercise</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-take-home-exercise">    
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html">
+ <span class="dropdown-text">Take-home Exercise 1</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../Take-home_Ex/Take-home_Ex02/Take-home_Ex02.html">
+ <span class="dropdown-text">Take-home Exercise 2</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#take-home-exercise-3-prototyping-modules-for-geospatial-analytics-shiny-application" id="toc-take-home-exercise-3-prototyping-modules-for-geospatial-analytics-shiny-application" class="nav-link active" data-scroll-target="#take-home-exercise-3-prototyping-modules-for-geospatial-analytics-shiny-application"><strong>Take-home Exercise 3: Prototyping Modules for Geospatial Analytics Shiny Application</strong></a>
+  <ul class="collapse">
+  <li><a href="#overview" id="toc-overview" class="nav-link" data-scroll-target="#overview">1.0 Overview</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">2.0 Packages</a></li>
+  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">3.0 Data Preparation</a>
+  <ul class="collapse">
+  <li><a href="#preparing-the-admin1-layer" id="toc-preparing-the-admin1-layer" class="nav-link" data-scroll-target="#preparing-the-admin1-layer">3.1 Preparing the admin1 layer</a></li>
+  <li><a href="#preparing-the-admin2-layer" id="toc-preparing-the-admin2-layer" class="nav-link" data-scroll-target="#preparing-the-admin2-layer">3.2 Preparing the admin2 layer</a></li>
+  <li><a href="#preparing-the-armed-conflict-point-events-layer" id="toc-preparing-the-armed-conflict-point-events-layer" class="nav-link" data-scroll-target="#preparing-the-armed-conflict-point-events-layer">3.3 Preparing the armed conflict point events layer</a></li>
+  </ul></li>
+  <li><a href="#interactive-point-map" id="toc-interactive-point-map" class="nav-link" data-scroll-target="#interactive-point-map">4.0 Interactive Point Map</a></li>
+  <li><a href="#time-series-graph" id="toc-time-series-graph" class="nav-link" data-scroll-target="#time-series-graph">5.0 Time Series Graph</a></li>
+  <li><a href="#shiny-ui" id="toc-shiny-ui" class="nav-link" data-scroll-target="#shiny-ui">6.0 Shiny UI</a>
+  <ul class="collapse">
+  <li><a href="#shiny-ui-for-interactive-point-map" id="toc-shiny-ui-for-interactive-point-map" class="nav-link" data-scroll-target="#shiny-ui-for-interactive-point-map">6.1 Shiny UI for Interactive Point Map</a></li>
+  <li><a href="#shiny-ui-for-time-series-graph" id="toc-shiny-ui-for-time-series-graph" class="nav-link" data-scroll-target="#shiny-ui-for-time-series-graph">6.2 Shiny UI for Time Series Graph</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Take-Home Exercise 3</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Immanuel Leong </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 20, 2024</p>
+    </div>
+  </div>
+  
+    <div>
+    <div class="quarto-title-meta-heading">Modified</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date-modified">October 20, 2024</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="take-home-exercise-3-prototyping-modules-for-geospatial-analytics-shiny-application" class="level1">
+<h1><strong>Take-home Exercise 3: Prototyping Modules for Geospatial Analytics Shiny Application</strong></h1>
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">1.0 Overview</h2>
+<p>In this exercise, I prototype the exploratory data analysis module of a Shiny application that allows users to investigate the spatial distribution and temporal trends of armed conflict events in Papua, a region of Indonesia that has been experiencing a protracted military conflict since 1962, between Indonesian security forces and separatist guerrilla groups under the umbrella of the Free Papua Movement.</p>
+<p>Our application covers the period from 1 January 2015, shortly after Indonesian President Joko Widodo (“Jokowi”) began his first term, to 30 June 2024, towards the end of Jokowi’s second term. It thus provides insights into how the Papua conflict has evolved over Jokowi’s time in office.</p>
+</section>
+<section id="packages" class="level2">
+<h2 class="anchored" data-anchor-id="packages">2.0 Packages</h2>
+<p>For this exercise, the following R packages are used:</p>
+<ul>
+<li><p><a href="https://cran.r-project.org/web/packages/tidyverse/index.html"><strong>tidyverse</strong></a>, a collection of R packages designed for data science, and which provides functions to import, transform, and visualise the data.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/sf/index.html"><strong>sf</strong></a>, to import, manage and process vector-based geospatial data in R.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/tmap/index.html"><strong>tmap</strong></a>, which provides functions for plotting cartographic quality static point patterns maps or interactive maps.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/shiny/index.html"><strong>shiny</strong></a>, which makes it easy to build interactive web applications with R.</p></li>
+</ul>
+<p>All of these packages are supported in R CRAN.</p>
+<p><em>p_load()</em> function of pacman package is used to install and load these packages into the R environment.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse, sf, tmap, shiny)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="data-preparation" class="level2">
+<h2 class="anchored" data-anchor-id="data-preparation">3.0 Data Preparation</h2>
+<p>For this exercise, we will need to prepare the following data layers:</p>
+<ul>
+<li><p>A study area layer in sf polygon feature format, at Indonesia’s admin1 (provinsi/province) level.</p></li>
+<li><p>A study area layer in sf polygon feature format, at Indonesia’s admin2 (kota &amp; kabupaten/city &amp; regency) level.</p></li>
+<li><p>A point events layer in sf point feature format, showing the location, date and other attributes of armed conflict events in the Papua region.</p></li>
+</ul>
+<section id="preparing-the-admin1-layer" class="level3">
+<h3 class="anchored" data-anchor-id="preparing-the-admin1-layer">3.1 Preparing the admin1 layer</h3>
+<section id="importing-the-data-and-checking-the-projection" class="level4">
+<h4 class="anchored" data-anchor-id="importing-the-data-and-checking-the-projection">3.1.1 Importing the data and checking the projection</h4>
+<p>Import <code>idn_admbnda_adm1_bps_20200401</code> as a simple features object, which we name <code>admin1</code>. This dataset provides information on Indonesia’s admin1 boundaries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>admin1 <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="at">dsn =</span> <span class="st">"data/adminboundaries"</span>, <span class="at">layer =</span> <span class="st">"idn_admbnda_adm1_bps_20200401"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `idn_admbnda_adm1_bps_20200401' from data source 
+  `C:\ImmanuelLeong\IS415-Geospatial\Take-home_Ex\Take-home_Ex03\data\adminboundaries' 
+  using driver `ESRI Shapefile'
+Simple feature collection with 34 features and 12 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: 95.01079 ymin: -11.00762 xmax: 141.0194 ymax: 6.07693
+Geodetic CRS:  WGS 84</code></pre>
+</div>
+</div>
+<p><code>admin1</code> has a total of 34 features, and is projected in WGS 84.</p>
+<p>Sometimes, when importing geospatial data into R, the coordinate system of the source data is wrongly assigned during the importing process. We check the CRS.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(admin1)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Coordinate Reference System:
+  User input: WGS 84 
+  wkt:
+GEOGCRS["WGS 84",
+    DATUM["World Geodetic System 1984",
+        ELLIPSOID["WGS 84",6378137,298.257223563,
+            LENGTHUNIT["metre",1]]],
+    PRIMEM["Greenwich",0,
+        ANGLEUNIT["degree",0.0174532925199433]],
+    CS[ellipsoidal,2],
+        AXIS["latitude",north,
+            ORDER[1],
+            ANGLEUNIT["degree",0.0174532925199433]],
+        AXIS["longitude",east,
+            ORDER[2],
+            ANGLEUNIT["degree",0.0174532925199433]],
+    ID["EPSG",4326]]</code></pre>
+</div>
+</div>
+<p>The EPSG code indicated is 4326, which is correct since the data is projected in WGS 84.</p>
+</section>
+<section id="reprojecting-the-data" class="level4">
+<h4 class="anchored" data-anchor-id="reprojecting-the-data">3.1.2 Reprojecting the data</h4>
+<p>In geospatial analytics, it is very common for us to transform the original data from geographic coordinate system to projected coordinate system. This is because geographic coordinate system is not appropriate if the analysis need to use distance or/and area measurements.</p>
+<p>In the following code chunk, we reproject <code>admin1</code> in the DGN95 / UTM zone 53S project coordinate system, which has EPSG code 23883.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>admin1_23883 <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(admin1, <span class="at">crs =</span> <span class="dv">23883</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Using the following code chunk, we verify that we have successfully reprojected <code>admin1</code> in the the DGN95 / UTM zone 53S coordinate system.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_geometry</span>(admin1_23883)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Geometry set for 34 features 
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -4331262 ymin: 8755925 xmax: 1168187 ymax: 10875090
+Projected CRS: DGN95 / UTM zone 53S
+First 5 geometries:</code></pre>
+</div>
+</div>
+</section>
+<section id="selecting-the-study-area" class="level4">
+<h4 class="anchored" data-anchor-id="selecting-the-study-area">3.1.3 Selecting the study area</h4>
+<p>As mentioned earlier, our study area is the region of Papua. This currently consists of 6 provinces: Papua Selatan (South Papua), Papua Tengah (Central Papua), Papua Pegunungan (Mountains Papua), Papua Barat Daya (South-West Papua), Papua Barat (West Papua), and Papua.</p>
+<p>However, were only created in <a href="https://unstats.un.org/unsd/ungegn/sessions/3rd_session_2023/documents/GEGN.2_2023_50_CRP50.pdf">2022</a>, when they were carved out of the original 2 provinces of Papua and Papua Barat. Since the source data was last modified in <a href="https://data.humdata.org/dataset/cod-ab-idn?">April 2020</a>, this change has not been reflected, and <code>admin1_23883</code> only contains the geospatial data for the 2 original provinces in the Papua region, as well as provinces in the rest of Indonesia.</p>
+<p>As most of the time period we are studying (1 January 2015 to 30 June 2024) falls before this change, to simplify our analysis, we can use this original data for the entire study period.</p>
+<p>Hence, we use the <em>filter()</em> function of <strong>dplyr</strong>, part of the <strong>tidyverse</strong>, to extract the data for Papua and Papua Barat, and save it as a new sf data.frame <code>admin1_study</code>. The ADM1_EN field of <code>admin1_23883</code> contains the name of each province.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>admin1_study <span class="ot">&lt;-</span> admin1_23883 <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ADM1_EN <span class="sc">==</span> <span class="st">"Papua"</span> <span class="sc">|</span> ADM1_EN <span class="sc">==</span> <span class="st">"Papua Barat"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>admin1_study</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 2 features and 12 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -134331.7 ymin: 8986310 xmax: 1168187 ymax: 10103660
+Projected CRS: DGN95 / UTM zone 53S
+  Shape_Leng Shape_Area     ADM1_EN ADM1_PCODE ADM1_REF ADM1ALT1EN ADM1ALT2EN
+1   63.86288  25.607715       Papua       ID94     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+2   74.47466   8.010799 Papua Barat       ID91     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+    ADM0_EN ADM0_PCODE       date    validOn    validTo
+1 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+2 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+                        geometry
+1 MULTIPOLYGON (((936916.9 90...
+2 MULTIPOLYGON (((267868.9 95...</code></pre>
+</div>
+</div>
+<p>As required, <code>admin1_study</code> is a sf polygon data.frame. It has 2 features.</p>
+<p>We verify that the geometries of both features in <code>admin1_study</code> are valid.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">which</span>(<span class="fu">st_is_valid</span>(admin1_study) <span class="sc">==</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2</code></pre>
+</div>
+</div>
+<p>We visualise <code>admin1_study</code> using <em>plot()</em>. As expected, this depicts the original 2 provinces of Papua and Papua Barat</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(admin1_study)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Take-home_Ex03_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can now save the <code>admin1_study</code> study area layer using the <em>write_rds()</em> function of <strong>readr</strong>, part of the <strong>tidyverse</strong>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(admin1_study, <span class="st">"data/rds/admin1_study.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="preparing-the-admin2-layer" class="level3">
+<h3 class="anchored" data-anchor-id="preparing-the-admin2-layer">3.2 Preparing the admin2 layer</h3>
+<section id="importing-the-data-and-checking-the-projection-1" class="level4">
+<h4 class="anchored" data-anchor-id="importing-the-data-and-checking-the-projection-1">3.2.1 Importing the data and checking the projection</h4>
+<p>Import <code>idn_admbnda_adm2_bps_20200401</code> as a simple features object, which we name <code>admin2</code>. This dataset provides information on Indonesia’s admin2 boundaries.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>admin2 <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="at">dsn =</span> <span class="st">"data/adminboundaries"</span>, <span class="at">layer =</span> <span class="st">"idn_admbnda_adm2_bps_20200401"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `idn_admbnda_adm2_bps_20200401' from data source 
+  `C:\ImmanuelLeong\IS415-Geospatial\Take-home_Ex\Take-home_Ex03\data\adminboundaries' 
+  using driver `ESRI Shapefile'
+Simple feature collection with 522 features and 14 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: 95.01079 ymin: -11.00762 xmax: 141.0194 ymax: 6.07693
+Geodetic CRS:  WGS 84</code></pre>
+</div>
+</div>
+</section>
+<section id="reprojecting-the-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="reprojecting-the-data-1">3.2.2 Reprojecting the data</h4>
+<p>Again, the data is projected in WGS84, and we reproject it in the DGN95 / UTM zone 53S coordinate system.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>admin2_23883 <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(admin2, <span class="dv">23883</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_geometry</span>(admin2_23883)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Geometry set for 522 features 
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -4331262 ymin: 8755925 xmax: 1168187 ymax: 10875090
+Projected CRS: DGN95 / UTM zone 53S
+First 5 geometries:</code></pre>
+</div>
+</div>
+</section>
+<section id="selecting-the-study-area-1" class="level4">
+<h4 class="anchored" data-anchor-id="selecting-the-study-area-1">3.3.3 Selecting the study area</h4>
+<p>Similar to <code>admin1_23883</code>, the ADM1_EN field of <code>admin2_23883</code> contains the name of the province that each admin2 subdivision (city or regency) belonged to as of April 2020.</p>
+<p>We use the <em>filter()</em> function of <strong>dplyr</strong>, part of the <strong>tidyverse</strong>, to extract the data for the admin2 subdivisions that belonged to Papua and Papua Barat, and save it as a new sf data.frame <code>admin2_study</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>admin2_study <span class="ot">&lt;-</span> admin2_23883 <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(ADM1_EN <span class="sc">==</span> <span class="st">"Papua"</span> <span class="sc">|</span> ADM1_EN <span class="sc">==</span> <span class="st">"Papua Barat"</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>admin2_study</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 42 features and 14 fields
+Geometry type: MULTIPOLYGON
+Dimension:     XY
+Bounding box:  xmin: -134331.7 ymin: 8986310 xmax: 1168187 ymax: 10103660
+Projected CRS: DGN95 / UTM zone 53S
+First 10 features:
+   Shape_Leng Shape_Area      ADM2_EN ADM2_PCODE ADM2_REF ADM2ALT1EN ADM2ALT2EN
+1    7.478910  2.0417988        Asmat     ID9415     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+2    4.873627  0.1830028  Biak Numfor     ID9409     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+3    6.826722  1.9319841 Boven Digoel     ID9413     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+4    1.913528  0.1496381       Deiyai     ID9436     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+5    3.209777  0.3782397      Dogiyai     ID9434     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+6    9.412293  0.8938388       Fakfak     ID9101     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+7    3.696500  0.3771067   Intan Jaya     ID9435     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+8    7.551512  1.1672374     Jayapura     ID9403     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+9    2.998729  0.2147504   Jayawijaya     ID9402     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+10  16.871958  1.3150578      Kaimana     ID9102     &lt;NA&gt;       &lt;NA&gt;       &lt;NA&gt;
+       ADM1_EN ADM1_PCODE   ADM0_EN ADM0_PCODE       date    validOn    validTo
+1        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+2        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+3        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+4        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+5        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+6  Papua Barat       ID91 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+7        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+8        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+9        Papua       ID94 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+10 Papua Barat       ID91 Indonesia         ID 2019-12-20 2020-04-01 -001-11-30
+                         geometry
+1  MULTIPOLYGON (((833108.1 93...
+2  MULTIPOLYGON (((680501.1 98...
+3  MULTIPOLYGON (((1164841 929...
+4  MULTIPOLYGON (((664348.1 95...
+5  MULTIPOLYGON (((621453.9 95...
+6  MULTIPOLYGON (((251837.6 96...
+7  MULTIPOLYGON (((645554.4 96...
+8  MULTIPOLYGON (((1124342 972...
+9  MULTIPOLYGON (((933136.6 95...
+10 MULTIPOLYGON (((267868.9 95...</code></pre>
+</div>
+</div>
+<p>As required, <code>admin2_study</code> is a sf polygon data.frame. It has 42 features.</p>
+<p>We verify that all the geometries in <code>admin2_study</code> are valid.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">which</span>(<span class="fu">st_is_valid</span>(admin2_study) <span class="sc">==</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 42</code></pre>
+</div>
+</div>
+<p>We visualise <code>admin2_study</code> using <em>plot()</em>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(admin2_study)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Take-home_Ex03_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>We can now save the <code>admin2_study</code> study area layer using <em>write_rds().</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(admin2_study, <span class="st">"data/rds/admin2_study.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="preparing-the-armed-conflict-point-events-layer" class="level3">
+<h3 class="anchored" data-anchor-id="preparing-the-armed-conflict-point-events-layer">3.3 Preparing the armed conflict point events layer</h3>
+<section id="importing-the-data" class="level4">
+<h4 class="anchored" data-anchor-id="importing-the-data">3.3.1 Importing the data</h4>
+<p>Lastly, we import <code>2015-01-01-2024-06-30-Indonesia.csv</code>. This dataset provides location, date, and other attribute information on 6 types of armed conflict events in Indonesia occurring from 1 January 2015 to 30 June 2024. Since it is in csv format, we use the <em>read_csv()</em> function of <strong>readr</strong>, part of the <strong>tidyverse</strong>, to import it, and save it as an object named <code>points</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>points <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/2015-01-01-2024-06-30-Indonesia.csv"</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(points)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 17,116
+Columns: 31
+$ event_id_cnty      &lt;chr&gt; "IDN17267", "IDN17269", "IDN17293", "IDN17428", "ID…
+$ event_date         &lt;chr&gt; "30 June 2024", "30 June 2024", "30 June 2024", "30…
+$ year               &lt;dbl&gt; 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 202…
+$ time_precision     &lt;dbl&gt; 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ disorder_type      &lt;chr&gt; "Political violence", "Demonstrations", "Demonstrat…
+$ event_type         &lt;chr&gt; "Violence against civilians", "Protests", "Protests…
+$ sub_event_type     &lt;chr&gt; "Attack", "Peaceful protest", "Peaceful protest", "…
+$ actor1             &lt;chr&gt; "Military Forces of Indonesia (2014-)", "Protesters…
+$ assoc_actor_1      &lt;chr&gt; NA, "AJI: Alliance of Independent Journalists; Jour…
+$ inter1             &lt;chr&gt; "State forces", "Protesters", "Protesters", "Rebel …
+$ actor2             &lt;chr&gt; "Civilians (Indonesia)", NA, NA, NA, NA, "Civilians…
+$ assoc_actor_2      &lt;chr&gt; "TPNPB: West Papua National Liberation Army", NA, N…
+$ inter2             &lt;chr&gt; "Civilians", NA, NA, NA, NA, "Civilians", NA, "Stat…
+$ interaction        &lt;chr&gt; "State forces-Civilians", "Protesters only", "Prote…
+$ civilian_targeting &lt;chr&gt; "Civilian targeting", NA, NA, NA, NA, "Civilian tar…
+$ iso                &lt;dbl&gt; 360, 360, 360, 360, 360, 360, 360, 360, 360, 360, 3…
+$ region             &lt;chr&gt; "Southeast Asia", "Southeast Asia", "Southeast Asia…
+$ country            &lt;chr&gt; "Indonesia", "Indonesia", "Indonesia", "Indonesia",…
+$ admin1             &lt;chr&gt; "Central Papua", "Jakarta", "East Java", "West Java…
+$ admin2             &lt;chr&gt; "Intan Jaya", "Central Jakarta", "Surabaya", "Bogor…
+$ admin3             &lt;chr&gt; "Sugapa", "Gambir", "Genteng", "Central Bogor", "Re…
+$ location           &lt;chr&gt; "Sugapa", "Jakarta - Central", "Surabaya", "Bogor",…
+$ latitude           &lt;dbl&gt; -3.7430, -6.1806, -7.2492, -6.5944, -6.9222, 3.5833…
+$ longitude          &lt;dbl&gt; 137.0500, 106.8283, 112.7510, 106.7891, 107.6070, 9…
+$ geo_precision      &lt;dbl&gt; 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+$ source             &lt;chr&gt; "Human Rights Monitor", "Kompas", "Tribunnews", "Ko…
+$ source_scale       &lt;chr&gt; "Other", "National", "National", "National", "Natio…
+$ notes              &lt;chr&gt; "On 30 June 2024, the Indonesian military forces ar…
+$ fatalities         &lt;dbl&gt; 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+$ tags               &lt;chr&gt; NA, "crowd size=no report", "crowd size=no report",…
+$ timestamp          &lt;dbl&gt; 1720552459, 1720552459, 1720552459, 1721769310, 172…</code></pre>
+</div>
+</div>
+<p>The longitude and latitude fields capture the x- and y-coordinates of the data points respectively. They appear to be in the WGS 84 geographic coordinate system (in which latitudes range from -90 to 90 and longitudes range from 0 to 360).</p>
+<p>We then convert <code>points</code> to an sf object.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>points_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(points, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"longitude"</span>,<span class="st">"latitude"</span>), <span class="at">crs =</span> <span class="dv">4326</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">st_geometry</span>(points_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Geometry set for 17116 features 
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 95.2127 ymin: -10.7323 xmax: 140.8694 ymax: 5.8925
+Geodetic CRS:  WGS 84
+First 5 geometries:</code></pre>
+</div>
+</div>
+</section>
+<section id="importing-the-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="importing-the-data-1">3.3.2 Importing the data</h4>
+<p>We reproject <code>points_sf</code> in the DGN95 / UTM zone 53S coordinate system, and save the reprojected data as a new object <code>points_23883</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>points_23883 <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(points_sf, <span class="at">crs =</span> <span class="dv">23883</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">st_geometry</span>(points_23883)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Geometry set for 17116 features 
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: -4304403 ymin: 8787709 xmax: 1153416 ymax: 10846150
+Projected CRS: DGN95 / UTM zone 53S
+First 5 geometries:</code></pre>
+</div>
+</div>
+</section>
+<section id="selecting-points-in-the-study-area" class="level4">
+<h4 class="anchored" data-anchor-id="selecting-points-in-the-study-area">3.3.3 Selecting points in the study area</h4>
+<p><code>points_23883</code> provides information on armed conflict events throughout Indonesia, and the admin1 field contains the name of the province where each point event took place.</p>
+<p>However, unlike the administrative boundaries datasets, the source data here is continually updated. This means that both the original (pre-2022) and new (post-2022) province names are used. We use the <em>group_by()</em> and <em>summarize()</em> functions of <strong>dplyr</strong> to find all the provinces that are named in <code>points_23883</code>, and save them as a data.frame <code>provinces</code> .</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>provinces <span class="ot">&lt;-</span> points_23883 <span class="sc">%&gt;%</span> </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(admin1) <span class="sc">%&gt;%</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As we can see in <code>provinces</code>, the 6 current provinces are all named (Central Papua, Highland Papua, Papua, South Papua, Southwest Papua and West Papua).</p>
+<p>We create a vector containing these province names.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>provincenames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Central Papua"</span>, <span class="st">"Highland Papua"</span>, <span class="st">"Papua"</span>, <span class="st">"South Papua"</span>, <span class="st">"Southwest Papua"</span>, <span class="st">"West Papua"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we use <em>filter()</em> to extract only the armed conflict events that take place in these provinces from <code>points_23883</code>. In addition, we use <em>select()</em>, also part of <strong>dplyr</strong>, to retain only the fields containing the event date, event type, involved parties (actor 1 and actor 2), the province (admin 1) and regency/city (admin2) where the event occurred, the number of fatalities, notes about the event, and the point geometry, for each event.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>points_study <span class="ot">&lt;-</span> points_23883 <span class="sc">%&gt;%</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(admin1 <span class="sc">%in%</span> provincenames) <span class="sc">%&gt;%</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(event_date, event_type, actor1, actor2, admin1, admin2, fatalities, notes, geometry)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>points_study</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Simple feature collection with 2942 features and 8 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: -23320.68 ymin: 9056317 xmax: 1153416 ymax: 9956392
+Projected CRS: DGN95 / UTM zone 53S
+# A tibble: 2,942 × 9
+   event_date   event_type          actor1 actor2 admin1 admin2 fatalities notes
+   &lt;chr&gt;        &lt;chr&gt;               &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;       &lt;dbl&gt; &lt;chr&gt;
+ 1 30 June 2024 Violence against c… Milit… Civil… Centr… Intan…          1 On 3…
+ 2 29 June 2024 Strategic developm… Civil… &lt;NA&gt;   Centr… Puncak          0 Disp…
+ 3 29 June 2024 Battles             TPNPB… Milit… Centr… Puncak          1 On 2…
+ 4 28 June 2024 Protests            Prote… &lt;NA&gt;   Papua  Jayap…          0 On 2…
+ 5 28 June 2024 Protests            Prote… &lt;NA&gt;   South… Sorong          0 On 2…
+ 6 28 June 2024 Battles             TPNPB… Milit… Centr… Puncak          0 On 2…
+ 7 27 June 2024 Protests            Prote… &lt;NA&gt;   South… South…          0 On 2…
+ 8 27 June 2024 Protests            Prote… &lt;NA&gt;   Papua  Jayap…          0 On 2…
+ 9 22 June 2024 Battles             Milit… TPNPB… South… Maybr…          0 On 2…
+10 22 June 2024 Protests            Prote… &lt;NA&gt;   Papua  Jayap…          0 On 2…
+# ℹ 2,932 more rows
+# ℹ 1 more variable: geometry &lt;POINT [m]&gt;</code></pre>
+</div>
+</div>
+<p>There are 2942 features in the <code>points_study</code> sf point data.frame, corresponding to 2942 armed conflict point events.</p>
+<p>We verify that the geometries of all the point events are valid.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">which</span>(<span class="fu">st_is_valid</span>(points_study) <span class="sc">==</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2942</code></pre>
+</div>
+</div>
+<p>We can now save the <code>points_study</code> study area layer using <em>write_rds().</em></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(points_study, <span class="st">"data/rds/points_study.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="interactive-point-map" class="level2">
+<h2 class="anchored" data-anchor-id="interactive-point-map">4.0 Interactive Point Map</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(admin1_study) <span class="sc">+</span> </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>() <span class="sc">+</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_shape</span>(points_study) <span class="sc">+</span> </span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">tm_dots</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Take-home_Ex03_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="time-series-graph" class="level2">
+<h2 class="anchored" data-anchor-id="time-series-graph">5.0 Time Series Graph</h2>
+</section>
+<section id="shiny-ui" class="level2">
+<h2 class="anchored" data-anchor-id="shiny-ui">6.0 Shiny UI</h2>
+<section id="shiny-ui-for-interactive-point-map" class="level3">
+<h3 class="anchored" data-anchor-id="shiny-ui-for-interactive-point-map">6.1 Shiny UI for Interactive Point Map</h3>
+</section>
+<section id="shiny-ui-for-time-series-graph" class="level3">
+<h3 class="anchored" data-anchor-id="shiny-ui-for-time-series-graph">6.2 Shiny UI for Time Series Graph</h3>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

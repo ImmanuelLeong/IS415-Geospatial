@@ -117,6 +117,10 @@ ul.task-list li input[type="checkbox"] {
     <a class="dropdown-item" href="../Hands-on_Ex/Hands-on_Ex07/Hands-on_Ex07.html">
  <span class="dropdown-text">Hands-on Exercise 7</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="../Hands-on_Ex/Hands-on_Ex08/Hands-on_Ex08.html">
+ <span class="dropdown-text">Hands-on Exercise 8</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -182,8 +186,30 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#issues-and-motivation" id="toc-issues-and-motivation" class="nav-link active" data-scroll-target="#issues-and-motivation">1. Issues and Motivation</a></li>
+  <li><a href="#relevant-works" id="toc-relevant-works" class="nav-link" data-scroll-target="#relevant-works">2. Relevant Works</a></li>
+  <li><a href="#approach" id="toc-approach" class="nav-link" data-scroll-target="#approach">3. Approach</a>
+  <ul class="collapse">
+  <li><a href="#exploratory-data-analysis" id="toc-exploratory-data-analysis" class="nav-link" data-scroll-target="#exploratory-data-analysis">3.1 Exploratory Data Analysis</a></li>
+  <li><a href="#spatial-point-patterns-analysis-1st-and-2nd-order" id="toc-spatial-point-patterns-analysis-1st-and-2nd-order" class="nav-link" data-scroll-target="#spatial-point-patterns-analysis-1st-and-2nd-order">3.2 Spatial Point Patterns Analysis: 1st and 2nd Order</a></li>
+  <li><a href="#spatio-point-patterns-analysis-1st-and-2nd-order" id="toc-spatio-point-patterns-analysis-1st-and-2nd-order" class="nav-link" data-scroll-target="#spatio-point-patterns-analysis-1st-and-2nd-order">3.3 Spatio Point Patterns Analysis: 1st and 2nd Order</a></li>
+  </ul></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">4. Data</a></li>
+  <li><a href="#r-packages" id="toc-r-packages" class="nav-link" data-scroll-target="#r-packages">5. R Packages</a></li>
+  <li><a href="#storyboard" id="toc-storyboard" class="nav-link" data-scroll-target="#storyboard">6. Storyboard</a>
+  <ul class="collapse">
+  <li><a href="#exploratory-data-analysis-page" id="toc-exploratory-data-analysis-page" class="nav-link" data-scroll-target="#exploratory-data-analysis-page">Exploratory Data Analysis Page</a></li>
+  <li><a href="#spatial-point-patterns-analysis-page" id="toc-spatial-point-patterns-analysis-page" class="nav-link" data-scroll-target="#spatial-point-patterns-analysis-page">Spatial Point Patterns Analysis Page</a></li>
+  <li><a href="#spatiotemporal-point-patterns-analysis-page" id="toc-spatiotemporal-point-patterns-analysis-page" class="nav-link" data-scroll-target="#spatiotemporal-point-patterns-analysis-page">Spatiotemporal Point Patterns Analysis Page</a></li>
+  </ul></li>
+  <li><a href="#timeline" id="toc-timeline" class="nav-link" data-scroll-target="#timeline">7. Timeline</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -207,8 +233,119 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
+<section id="issues-and-motivation" class="level1">
+<h1>1. Issues and Motivation</h1>
+</section>
+<section id="relevant-works" class="level1">
+<h1>2. Relevant Works</h1>
+</section>
+<section id="approach" class="level1">
+<h1>3. Approach</h1>
+<p>Our application will have the following features:</p>
+<section id="exploratory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis">3.1 Exploratory Data Analysis</h2>
+<ul>
+<li><p>Users will be able to view an interactive point map of armed conflict events in the Indonesian provinces of Southwest Papua, West Papua, Central Papua, Papua, Highland Papua and South Papua, occurring from January 2015 to June 2024. The map will allow users to overlay administrative (province; regency and city) boundaries and to filter event points by:</p>
+<ul>
+<li><p>Study areas (regencies and cities)</p></li>
+<li><p>Event type</p></li>
+<li><p>Actors involved</p></li>
+<li><p>Number of reported fatalities</p></li>
+<li><p>Time period (start date and end date)</p></li>
+</ul></li>
+<li><p>Users will also be able to view an interactive graph of the aggregate number of armed conflict events over time. They will be also be able to view the time series data for their chosen:</p>
+<ul>
+<li><p>Study areas (regencies and cities)</p></li>
+<li><p>Event type</p></li>
+<li><p>Actors involved</p></li>
+<li><p>Number of reported fatalities</p></li>
+<li><p>Time period (start date and end date)</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="spatial-point-patterns-analysis-1st-and-2nd-order" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-point-patterns-analysis-1st-and-2nd-order">3.2 Spatial Point Patterns Analysis: 1st and 2nd Order</h2>
+<ul>
+<li><p>Users will be able to derive kernel density estimation (KDE) layers for visualising the spatial intensity of armed conflict point events over a chosen study area, during a time period stipulated by them.</p>
+<p>They will also be able to choose a:</p>
+<ul>
+<li><p>Bandwidth selection method (bw.diggle, bw.CvL, bw.scott, bw.ppl, or adaptive bandwidth)</p></li>
+<li><p>Smoothing kernel method (Gaussian, Epanechnikov, Quartic, or Disc)</p></li>
+</ul></li>
+<li><p>Users will also be able to perform 2nd order spatial point patterns analysis on the armed conflict point events occurring within the chosen study area and time period, and conduct a Monte Carlo test of complete spatial randomness on the point process, using any of the following functions:</p>
+<ul>
+<li><p>G-function</p></li>
+<li><p>F-function</p></li>
+<li><p>K-function</p></li>
+<li><p>L-function</p>
+<p>They will also be able to specify the edge correction to be applied and the number of simulations to be generated in the Monte Carlo test.</p></li>
+</ul></li>
+</ul>
+</section>
+<section id="spatio-point-patterns-analysis-1st-and-2nd-order" class="level2">
+<h2 class="anchored" data-anchor-id="spatio-point-patterns-analysis-1st-and-2nd-order">3.3 Spatio Point Patterns Analysis: 1st and 2nd Order</h2>
+<ul>
+<li><p>Users will be able to derive quarterly or monthly spatiotemporal kernel density estimation (STKDE) layers for armed conflict point events in their chosen study area, which will be displayed in a single animation.</p></li>
+<li><p>Users will be able to compute and visualise the space-time inhomogeneous K-function for their chosen study area, which will allow them to assess the spatiotemporal aggregation or regularity of the point process.</p></li>
+</ul>
+</section>
+</section>
+<section id="data" class="level1">
+<h1>4. Data</h1>
+<p>We will be using data from the following sources in our application, after appropriate processing.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Data</th>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Armed conflict events in Indonesia</td>
+<td><a href="https://acleddata.com/data-export-tool/">ACLED</a></td>
+<td>Data in csv format, providing location, date, and other attribute information on 6 types of armed conflict events in Indonesia occurring from 1 January 2018 to 30 June 2024.</td>
+</tr>
+<tr class="even">
+<td>Administrative boundaries of Indonesia</td>
+<td><a href="https://data.humdata.org/dataset/cod-ab-idn?">Humanitarian Data Exchange</a></td>
+<td>Polygon feature data in ESRI shapefile format, providing information on Indonesia’s subnational administrative level 1 (provinsi/province) and level 2 (kota, kabupaten / city, regency) boundaries.</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="r-packages" class="level1">
+<h1>5. R Packages</h1>
+<p>We will use the following R packages for our application.</p>
+<ul>
+<li><p><a href="https://shiny.posit.co/"><strong>shiny</strong></a>, a package that makes it easy to build interactive web apps straight from R.</p></li>
+<li><p><a href="https://www.tidyverse.org/"><strong>tidyverse</strong></a>, a collection of R packages designed for data science, and which provides functions to import, transform, and visualise the data.</p></li>
+<li><p><a href="https://r-spatial.github.io/sf/"><strong>sf</strong></a>, to import, manage and process vector-based geospatial data in R.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/tmap/index.html"><strong>tmap</strong></a>, which provides functions for plotting cartographic quality static point patterns maps or interactive maps.</p></li>
+<li><p><a href="https://spatstat.org/"><strong>spatstat</strong></a>, to perform 1st- and 2nd-order spatial point patterns analysis and derive kernel density estimation (KDE) layers.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/sparr/index.html"><strong>sparr</strong></a>, which provides functions to estimate kernel-smoothed spatial and spatio-temporal densities and relative risk functions, and perform subsequent inference.</p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/stpp/index.html"><strong>stpp</strong></a>, which provides statistical tools for analyzing the global and local second-order properties of spatio-temporal point processes, including estimators of the space-time inhomogeneous K-function and pair correlation function.</p></li>
+</ul>
+</section>
+<section id="storyboard" class="level1">
+<h1>6. Storyboard</h1>
+<section id="exploratory-data-analysis-page" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis-page">Exploratory Data Analysis Page</h2>
+<p><img src="images/clipboard-3967760634.png" class="img-fluid"></p>
+</section>
+<section id="spatial-point-patterns-analysis-page" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-point-patterns-analysis-page">Spatial Point Patterns Analysis Page</h2>
+</section>
+<section id="spatiotemporal-point-patterns-analysis-page" class="level2">
+<h2 class="anchored" data-anchor-id="spatiotemporal-point-patterns-analysis-page">Spatiotemporal Point Patterns Analysis Page</h2>
+</section>
+</section>
+<section id="timeline" class="level1">
+<h1>7. Timeline</h1>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
