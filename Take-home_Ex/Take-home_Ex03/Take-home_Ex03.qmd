@@ -35,7 +35,6 @@ All of these packages are supported in R CRAN.
 *p_load()* function of pacman package is used to install and load these packages into the R environment.
 
 ```{r}
-
 pacman::p_load(tidyverse, sf, tmap, shiny)
 ```
 
@@ -49,22 +48,26 @@ For this exercise, we will need to prepare the following data layers:
 
 -   A point events layer in sf point feature format, showing the location, date and other attributes of armed conflict events in the Papua region.
 
-### 3.1 Preparing the admin1 layer
+### 3.1 Preparing the admin1 and admin2 layers
 
 #### 3.1.1 Importing the data and checking the projection
 
-Import `idn_admbnda_adm1_bps_20200401` as a simple features object, which we name `admin1`. This dataset provides information on Indonesia's admin1 boundaries.
+Import `Batas_Wilayah_KelurahanDesa_10K_AR` as a simple features object, which we name `admin`. This dataset provides information on Indonesia's admin4 (village/desa and kelurahan) administrative boundaries as of 2023.
 
 ```{r}
-admin1 <- st_read(dsn = "data/adminboundaries", layer = "idn_admbnda_adm1_bps_20200401")
+admin <- st_read(dsn = "data/BATAS WILAYAH KELURAHAN-DESA 10K", layer = "Batas_Wilayah_KelurahanDesa_10K_AR")
+
+admin
+
+glimpse(admin)
 ```
 
-`admin1` has a total of 34 features, and is projected in WGS 84.
+We also observe that `admin` is projected in WGS 84.
 
 Sometimes, when importing geospatial data into R, the coordinate system of the source data is wrongly assigned during the importing process. We check the CRS.
 
 ```{r}
-st_crs(admin1)
+st_crs(admin)
 ```
 
 The EPSG code indicated is 4326, which is correct since the data is projected in WGS 84.
@@ -73,126 +76,122 @@ The EPSG code indicated is 4326, which is correct since the data is projected in
 
 In geospatial analytics, it is very common for us to transform the original data from geographic coordinate system to projected coordinate system. This is because geographic coordinate system is not appropriate if the analysis need to use distance or/and area measurements.
 
-In the following code chunk, we reproject `admin1` in the DGN95 / UTM zone 53S project coordinate system, which has EPSG code 23883.
+In the following code chunk, we reproject `admin`in the DGN95 / UTM zone 53S project coordinate system, which has EPSG code 23883.
 
 ```{r}
-admin1_23883 <- st_transform(admin1, crs = 23883)
+admin_23883 <- st_transform(admin, crs = 23883)
 ```
 
-Using the following code chunk, we verify that we have successfully reprojected `admin1` in the the DGN95 / UTM zone 53S coordinate system.
+Using the following code chunk, we verify that we have successfully reprojected `admin` in the the DGN95 / UTM zone 53S coordinate system.
 
 ```{r}
 
-st_geometry(admin1_23883)
+st_geometry(admin_23883)
 ```
 
 #### 3.1.3 Selecting the study area
 
-As mentioned earlier, our study area is the region of Papua. This currently consists of 6 provinces: Papua Selatan (South Papua), Papua Tengah (Central Papua), Papua Pegunungan (Mountains Papua), Papua Barat Daya (South-West Papua), Papua Barat (West Papua), and Papua.
+`admin_23883` contains 83518 features, each representing a village. However, for our study, we only require the data for villages in the Papua region, which consists of 6 provinces (as of 2023): Papua Selatan (South Papua), Papua Tengah (Central Papua), Papua Pegunungan (Mountains Papua), Papua Barat Daya (South-West Papua), Papua Barat (West Papua), and Papua.
 
-However, were only created in [2022](https://unstats.un.org/unsd/ungegn/sessions/3rd_session_2023/documents/GEGN.2_2023_50_CRP50.pdf), when they were carved out of the original 2 provinces of Papua and Papua Barat. Since the source data was last modified in [April 2020](https://data.humdata.org/dataset/cod-ab-idn?), this change has not been reflected, and `admin1_23883` only contains the geospatial data for the 2 original provinces in the Papua region, as well as provinces in the rest of Indonesia.
+The WADMPR field of `admin` contains the name of the province that each village belongs to.
 
-As most of the time period we are studying (1 January 2015 to 30 June 2024) falls before this change, to simplify our analysis, we can use this original data for the entire study period.
+All the provinces in the Papua region have the word "Papua" in their names. In the following code chunk, we extract the rows of `admin` that contain the word "Papua" in the WADMPR field and save them as a new object `papua`.
 
-Hence, we use the *filter()* function of **dplyr**, part of the **tidyverse**, to extract the data for Papua and Papua Barat, and save it as a new sf data.frame `admin1_study`. The ADM1_EN field of `admin1_23883` contains the name of each province.
-
-```{r}
-
-admin1_study <- admin1_23883 %>%
-  filter(ADM1_EN == "Papua" | ADM1_EN == "Papua Barat")
-
-admin1_study
-```
-
-As required, `admin1_study` is a sf polygon data.frame. It has 2 features.
-
-We verify that the geometries of both features in `admin1_study` are valid.
+*grepl()* of base R is used to obtain a logical vector indicating whether each element of `admin$WADMPR` contains a match to the word "Papua". Then, *filter()* of **dplyr** (part of the **tidyverse**) is used to retain only the corresponding rows of `admin`.
 
 ```{r}
-length(which(st_is_valid(admin1_study) == TRUE))
+papua <- filter(admin, grepl("Papua", admin$WADMPR, fixed = TRUE))  
+
+papua
 ```
 
-We visualise `admin1_study` using *plot()*. As expected, this depicts the original 2 provinces of Papua and Papua Barat
+As required, `papua` is a sf polygon data.frame. It has 7374 features.
+
+We check whether geometries of all the features in `papua` are valid.
 
 ```{r}
-plot(admin1_study)
+length(which(st_is_valid(papua) == TRUE))
 ```
 
-We can now save the `admin1_study` study area layer using the *write_rds()* function of **readr**, part of the **tidyverse**.
+As we can see, the geometries of 7371 features are valid. This means that `papua` contains 3 features with invalid geometries. Using *st_make_valid()* of **sf**, we make the invalid geometries valid. Next, we use *mutate()* of **dplyr** to replace the existing geometry column with a new one containing the valid geometries. We save the result as a new sf polygon data.frame, `papua_cleaned`.
+
+```{r}
+papua_cleaned <- papua %>%
+  mutate(geometry = st_make_valid(geometry))
+```
+
+We verify that all 7374 geometries in `papua_cleaned` are valid.
+
+```{r}
+length(which(st_is_valid(papua_cleaned) == TRUE))
+```
+
+#### 3.1.4 Obtaining admin1 boundaries
+
+Next, we use *group_by()* of **dplyr** to group the different villages according to the province they belong in. Then, we use *summarise()* of **dplyr** and *st_union()* of **sf** to combine the geometries of the different villages within each province and dissolve the boundaries between villages, thus obtaining the admin1 (province) level boundaries.
+
+```{r}
+papua_adm1 <- papua_cleaned %>%
+  group_by(WADMPR) %>%
+  summarise(geometry = st_union(geometry))
+
+papua_adm1
+```
+
+We visualise `papua_adm1` using *plot()*.
+
+```{r}
+plot(papua_adm1)
+```
+
+We can now save the `papua_adm1` study area layer using the *write_rds()* function of **readr**, part of the **tidyverse**.
 
 ```{r}
 #| eval: FALSE
 
-write_rds(admin1_study, "data/rds/admin1_study.rds")
+write_rds(papua_adm1, "data/rds/papua_adm1.rds")
 ```
 
 ```{r}
 #| echo: FALSE
 
-admin1_study <- read_rds("data/rds/admin1_study.rds")
+admin1_study <- read_rds("data/rds/papua_adm1.rds")
 ```
 
 ### 3.2 Preparing the admin2 layer
 
-#### 3.2.1 Importing the data and checking the projection
+#### 3.2.1 Obtaining admin2 boundaries
 
-Import `idn_admbnda_adm2_bps_20200401` as a simple features object, which we name `admin2`. This dataset provides information on Indonesia's admin2 boundaries.
+The WADMKK field of `papua_cleaned` contains the name of each city/regency that each village belongs to.
 
-```{r}
-admin2 <- st_read(dsn = "data/adminboundaries", layer = "idn_admbnda_adm2_bps_20200401")
-```
-
-#### 3.2.2 Reprojecting the data
-
-Again, the data is projected in WGS84, and we reproject it in the DGN95 / UTM zone 53S coordinate system.
+Similar to earlier, we first use *group_by()* of **dplyr** to group the different villages according to the province as well as city/regency they belong in. Then, we use *summarise()* of **dplyr** and *st_union()* of **sf** to combine the geometries of the different villages within each city/regency and dissolve the boundaries between villages, thus obtaining the admin2 (city/regency) level boundaries.
 
 ```{r}
-admin2_23883 <- st_transform(admin2, 23883)
+papua_adm2 <- papua_cleaned %>%
+  group_by(WADMPR, WADMKK) %>%
+  summarise(geometry = st_union(geometry))
+
+papua_adm2
 ```
+
+We visualise the admin2 boundaries in `papua_adm2` using *plot()*.
 
 ```{r}
-st_geometry(admin2_23883)
+plot(papua_adm2["WADMKK"])
 ```
 
-#### 3.3.3 Selecting the study area
-
-Similar to `admin1_23883`, the ADM1_EN field of `admin2_23883` contains the name of the province that each admin2 subdivision (city or regency) belonged to as of April 2020.
-
-We use the *filter()* function of **dplyr**, part of the **tidyverse**, to extract the data for the admin2 subdivisions that belonged to Papua and Papua Barat, and save it as a new sf data.frame `admin2_study`.
-
-```{r}
-admin2_study <- admin2_23883 %>%
-  filter(ADM1_EN == "Papua" | ADM1_EN == "Papua Barat")
-
-admin2_study
-```
-
-As required, `admin2_study` is a sf polygon data.frame. It has 42 features.
-
-We verify that all the geometries in `admin2_study` are valid.
-
-```{r}
-length(which(st_is_valid(admin2_study) == TRUE))
-```
-
-We visualise `admin2_study` using *plot()*.
-
-```{r}
-plot(admin2_study)
-```
-
-We can now save the `admin2_study` study area layer using *write_rds().*
+We can now save the `papua_adm2` study area layer using *write_rds().*
 
 ```{r}
 #| eval: FALSE
 
-write_rds(admin2_study, "data/rds/admin2_study.rds")
+write_rds(papua_adm2, "data/rds/papua_adm2.rds")
 ```
 
 ```{r}
 #| echo: FALSE
 
-admin2_study <- read_rds("data/rds/admin2_study.rds")
+papua_adm2 <- read_rds("data/rds/papua_adm2.rds")
 ```
 
 ### 3.3 Preparing the armed conflict point events layer
@@ -232,7 +231,9 @@ st_geometry(points_23883)
 
 `points_23883` provides information on armed conflict events throughout Indonesia, and the admin1 field contains the name of the province where each point event took place.
 
-However, unlike the administrative boundaries datasets, the source data here is continually updated. This means that both the original (pre-2022) and new (post-2022) province names are used. We use the *group_by()* and *summarize()* functions of **dplyr** to find all the provinces that are named in `points_23883`, and save them as a data.frame `provinces` .
+As mentioned earlier, our study area is the region of Papua, consisting of 6 provinces. 4 of these, namely Papua Selatan (South Papua), Papua Tengah (Central Papua), Papua Pegunungan (Mountains Papua), Papua Barat Daya (South-West Papua), were only created in [2022](https://unstats.un.org/unsd/ungegn/sessions/3rd_session_2023/documents/GEGN.2_2023_50_CRP50.pdf), when they were carved out of the original 2 provinces of Papua and Papua Barat.
+
+We use the *group_by()* and *summarize()* functions of **dplyr** to find all the provinces that are named in `points_23883`, and save them as a data.frame `provinces` .
 
 ```{r}
 provinces <- points_23883 %>% 
@@ -240,7 +241,9 @@ provinces <- points_23883 %>%
   summarize()
 ```
 
-As we can see in `provinces`, the 6 current provinces are all named (Central Papua, Highland Papua, Papua, South Papua, Southwest Papua and West Papua).
+Since `points_23883` contains data from 1 January 2015 to 30 June 2024, the admin1 field of each point event may reflect the original (pre-2022) or the new (post-2022) province names. As we can see in `provinces`, the 6 current provinces are all named in English (Central Papua, Highland Papua, Papua, South Papua, Southwest Papua and West Papua).
+
+(Note: In our later analysis, we need to be mindful that 2 of the current provinces have the same names as the original 2 provinces ("Papua" and "West Papua"). This means that when the admin1 field contains either of these values, we cannot be sure whether they are referring to the original or current provinces bearing these names. Hence, we should not use the values in the admin1 field to aggregate our data.)
 
 We create a vector containing these province names.
 
