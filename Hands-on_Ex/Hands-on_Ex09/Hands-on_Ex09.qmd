@@ -82,6 +82,8 @@ The code chunk below is used to import *MP_SUBZONE_WEB_PL* shapefile by using `s
 
 ```{r}
 mpsz <- st_read(dsn = "data/geospatial", layer = "MP14_SUBZONE_WEB_PL")
+
+write_rds(mpsz, "data/rds/mpsz.rds")
 ```
 
 The report above shows that the R object used to contain the imported MP14_SUBZONE_WEB_PL shapefile is called *mpsz* and it is a simple feature object. The geometry type is *multipolygon*. It is also important to note that mpsz simple feature object does not have EPSG information.
@@ -175,6 +177,10 @@ head(condo_resale.sf)
 ```
 
 Notice that the output is in point feature data frame.
+
+```{r}
+write_rds(condo_resale.sf, "data/rds/condo_resale_sf.rds")
+```
 
 ## **7 Exploratory Data Analysis (EDA)**
 

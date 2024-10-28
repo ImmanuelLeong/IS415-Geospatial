@@ -1,0 +1,195 @@
+---
+title: "In-Class Exercise 10"
+author: "Immanuel Leong"
+date: "October 28, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+## Getting Started
+
+```{r}
+pacman::p_load(olsrr, ggstatsplot, gtsummary, sf, tmap, tidyverse, performance, see, sfdep)
+```
+
+## Importing the data
+
+```{r}
+condo_resale <- read_csv("data/aspatial/Condo_resale_2015.csv")
+
+mpsz <- read_rds("data/rds/mpsz.rds")
+
+condo_resale_sf <- read_rds("data/rds/condo_resale_sf.rds")
+```
+
+## Correlation Analysis - ggstatsplot methods
+
+```{r}
+#| fig-height: 10
+#| fig-width: 15
+
+
+ggcorrmat(condo_resale[, 5:23])
+```
+
+## Building a Hedonic Pricing Model by using MLR Method
+
+```{r}
+condo_mlr <- lm(formula = SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD + PROX_CHILDCARE + PROX_ELDERLYCARE + PROX_URA_GROWTH_AREA + PROX_HAWKER_MARKET + PROX_KINDERGARTEN + PROX_MRT + PROX_PARK + PROX_PRIMARY_SCH + PROX_TOP_PRIMARY_SCH + PROX_SHOPPING_MALL + PROX_SUPERMARKET + PROX_BUS_STOP + NO_Of_UNITS + FAMILY_FRIENDLY + FREEHOLD, data = condo_resale_sf)
+
+summary(condo_mlr)
+```
+
+## Introducing olsrr package
+
+olsrr provides a collection of useful methods for building better multiple linear regression models. We will use it for:
+
+-   comprehensive regression output
+
+-   variable selection procedures
+
+## Generating tidy linear regression report
+
+```{r}
+
+olsrr_condo <- ols_regress(condo_mlr)
+```
+
+Alternatively, you can pass the formula directly into ols_regress().
+
+```{r}
+ols_regress(SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD + PROX_CHILDCARE + PROX_ELDERLYCARE + PROX_URA_GROWTH_AREA + PROX_HAWKER_MARKET + PROX_KINDERGARTEN + PROX_MRT + PROX_PARK + PROX_PRIMARY_SCH + PROX_TOP_PRIMARY_SCH + PROX_SHOPPING_MALL + PROX_SUPERMARKET + PROX_BUS_STOP + NO_Of_UNITS + FAMILY_FRIENDLY + FREEHOLD, data = condo_resale_sf)
+```
+
+## Variable selection
+
+Stepwise regression is the iterative construction of a regression model that involves the selection of independent variables to be used in a final model. It involves adding/removing potential explanatory variables in succession and testing for statistical significance after each iteration.
+
+### Forward stepwise regression
+
+```{r}
+condo_fw_mlr <- ols_step_forward_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE)
+
+condo_fw_mlr
+```
+
+```{r}
+plot(condo_fw_mlr)
+```
+
+### Backward stepwise regression
+
+```{r}
+condo_bw_mlr <- ols_step_backward_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE)
+
+condo_bw_mlr
+```
+
+### Bidirectional stepwise regression
+
+```{r}
+condo_both_mlr <- ols_step_both_p(
+  condo_mlr,
+  p_val = 0.05,
+  details = FALSE)
+
+condo_both_mlr
+```
+
+## Model selection
+
+In the code chunk below, compare_performance of performance package is used to compare the performance of the models.
+
+```{r}
+metric <- compare_performance(condo_mlr,
+                              condo_fw_mlr$model,
+                              condo_bw_mlr$model,
+                              condo_both_mlr$model)
+```
+
+In the code chunk below, gsub() is used to tidy the test value in Name field.
+
+```{r}
+metric$Name <- gsub(".*\\\\([a-zA-Z0-9_]+)\\\\, \\\\model\\\\.*", "\\1", metric$Name)
+```
+
+In the code chunk below, plot() of see package is used to plot a radar chart to compare the performance measures of the models.
+
+The different indices are normalised and larger values indicate better model performance. Points closer to the centre indicate worse fit indices.
+
+```{r}
+plot(metric)
+
+# plot for condo_both_mlr(lm) is covered by plot for condo_fw_mlr(lm)
+```
+
+## Visualising model parameters
+
+```{r}
+#| fig-width: 12
+#| fig-height: 12
+
+ggcoefstats(condo_both_mlr$model, sort = "ascending")
+```
+
+## Checking for multicollinearity
+
+```{r}
+check_collinearity(condo_both_mlr$model)
+```
+
+```{r}
+#| fig-width: 12
+#| fig-height: 6
+
+plot(check_collinearity(condo_both_mlr$model)) +
+  theme(axis.text.x = element_text(
+        angle = 45, hjust = 1))
+  
+```
+
+## Linearity assumption test
+
+```{r}
+out <- plot(check_model(condo_both_mlr$model, panel = FALSE))
+
+out[[2]]
+```
+
+## Normality assumption test
+
+```{r}
+plot(check_normality(condo_both_mlr$model))
+```
+
+## Checking of outliers
+
+```{r}
+outliers <- check_outliers(condo_both_mlr$model,
+                           method = "cook")
+
+outliers
+```
+
+```{r}
+plot(check_outliers(condo_both_mlr$model,
+                           method = "cook"))
+```
+
+## Spatial Non-stationary Assumption
+
+The hedonic model we try to build uses geographically referenced attributes, hence it is also important for us to visualise the residuals of the hedonic pricing mode.
+
+-   H0: The residuals are randomly distributed (aka spatially stationary)
+
+-   H1: The residuals are spatially non-stationary (signs of clustering/regularity)
