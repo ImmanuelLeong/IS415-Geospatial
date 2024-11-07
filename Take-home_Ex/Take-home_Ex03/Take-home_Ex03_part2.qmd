@@ -1,0 +1,239 @@
+---
+title: "Take-Home Exercise 3 (Part 2)"
+author: "Immanuel Leong"
+date: "November 3, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+```{r}
+#| echo: FALSE
+
+pacman::p_load(tidyverse, sf, tmap, dygraphs, shiny, designer)
+```
+
+```{r}
+#| echo: FALSE
+
+papua_adm1 <- read_rds("data/rds/papua_adm1.rds")
+
+papua_adm2 <- read_rds("data/rds/papua_adm2.rds")
+
+points_study <- read_rds("data/rds/points_study.rds")
+```
+
+## 4.0 Interactive Point Map
+
+The interactive point map map allows users to overlay administrative (province; regency and city) boundaries and to filter point events by:
+
+-   Study areas (regencies and cities)
+
+-   Event type
+
+-   Actors involved
+
+-   Number of reported fatalities
+
+-   Time period (start date and end date)
+
+In the following code chunk, we use the *select()* and *distinct()* functions of dplyr to identify all the unique event types that occur in the `points_study` dataset. *st_drop_geometry()* of **sf** is used to ensure that the geometry column is ignored, otherwise an event type will be repeated as long as there are multiple points with the same event type but with different geometries.
+
+```{r}
+
+points_study %>%
+  select(event_type) %>%
+  st_drop_geometry() %>%
+  distinct()
+```
+
+All of the 6 armed conflict event types occur in the dataset.
+
+Similarly, we can identify all the unique actor names that occur in the `points_study` dataset. Since there are two actor columns, actor1 and actor2, and the same actors can occur in either column for different events, we first combine the data from the two columns into a single vector and transform it into a data frame. Next, we use *group_by()* and *summarise()* of **dplyr** to find out the total number of events each group has been involved in, and arrange them in descending order.
+
+```{r}
+
+c(points_study$actor1, points_study$actor2) %>%
+  data.frame() %>%
+  setNames("actor") %>%
+  group_by(actor) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+```
+
+We can see that the top named actors involved in armed conflicts are civilians, protesters, the Police Forces of Indonesia (2014-), the TPNPB: West Papua National Liberation Army, and the Military Forces of Indonesia (2014-).
+
+Next, we apply the *summary()* function of base R to the fatalities column to obtain summary statistics.
+
+```{r}
+
+summary(points_study$fatalities)
+```
+
+We can see that the minimum number of fatalities in an event is 0, while the maximum is 33. The mean number of fatalities is less than 1.
+
+### 4.0.1 Entire Study Area
+
+We first create a function *map_overall().* This plots an interactive map for the entire study area using the three layers we created earlier.
+
+(Note that when plotting the `papua_adm1` layer, I use *tmap_options(check.and.fix = TRUE)* as a warning appears that `papua_adm1` is an invalid shape, despite having cleaned the data earlier and even though using *st_is_valid()* shows us that all the geometries in it are valid.)
+
+```{r}
+length(which(st_is_valid(papua_adm1) == TRUE))
+```
+
+The arguments of the functions specify criteria for filtering event points, namely whether they fall into a given date range, belong to a given event type, involve a given actor, and result in at least a certain number of fatalities.
+
+*filter()* of **dplyr** is used to retain only the point events that meet the criteria, and these are saved as `study_events` for plotting.
+
+The *if* and *else* statements ensure that if there are no point events within the specified study area that meet the specified criteria, only the study area layer is plotted.
+
+```{r}
+
+map_overall <- function(date_range, eventtype, actor, min_fatalities) {
+  study_events <- points_study %>% filter(dmy(event_date) %within% date_range & event_type == eventtype & (actor1 == actor | actor2 == actor) & fatalities >= min_fatalities)
+  
+  tmap_mode("view")
+  
+  if (nrow(study_events) > 0) {
+    
+    tm_shape(papua_adm1) +
+      tmap_options(check.and.fix = TRUE) +
+      tm_polygons(col = "MAP_COLORS", id = "WADMPR") +
+      tm_shape(papua_adm2) +
+      tm_polygons(col = "MAP_COLORS", id = "WADMKK") +
+      tm_shape(study_events) +
+      tm_dots()
+    
+  }
+  
+  else {
+    
+     tm_shape(papua_adm1) +
+      tm_polygons(col = "MAP_COLORS", id = "WADMPR") +
+      tm_shape(papua_adm2) +
+      tm_polygons(col = "MAP_COLORS", id = "WADMKK")
+    
+  }
+  
+  tm_shape(papua_adm1) +
+    tm_polygons(col = "MAP_COLORS", id = "WADMPR") +
+    tm_shape(papua_adm2) +
+    tm_polygons(col = "MAP_COLORS", id = "WADMKK") +
+    tm_shape(study_events) +
+    tm_dots()
+    
+}
+```
+
+Suppose that a user is interested only in armed conflict events that took place in year 2020, are of the type "Violence against civilians", involved the TPNPB: West Papua National Liberation Army, and had at least one fatality. They would call *map_overall()* as in the following code chunk.
+
+```{r}
+
+int <- interval(ymd("2020-01-01"), ymd("2020-12-31"))
+
+map_overall(int, "Violence against civilians", "TPNPB: West Papua National Liberation Army", 1)
+
+tmap_mode("plot")
+```
+
+### 4.0.2 Province Level
+
+We create a function *map_adm1().* The first argument specifies one of the provinces as the study area. The rest of the arguments specify criteria for filtering point events, namely whether they fall into a given date range, belong to a given event type, involve a given actor, and result in at least a certain number of fatalities.
+
+*st_intersection()* of **sf** is used to obtain the point events that intersect with the study area. We do this instead of filtering `points_study` by the value in the admin1 field to avoid our results being affected by any naming or boundary changes over time.
+
+*filter()* of **dplyr** is used to retain only the point events that meet the additional criteria, and these are saved as `study_events` for plotting.
+
+The *if* and *else* statements ensure that if there are no point events within the specified study area that meet the specified criteria, only the study area layer is plotted.
+
+```{r}
+map_adm1 <- function(province, date_range, eventtype, actor, min_fatalities) {
+  
+  study_area <- papua_adm1 %>% filter(WADMPR == province)
+  
+  study_events <- st_intersection(points_study, study_area) %>% filter(dmy(event_date) %within% date_range & event_type == eventtype & (actor1 == actor | actor2 == actor) & fatalities >= min_fatalities)
+  
+  tmap_mode("view")
+  
+  if (nrow(study_events) > 0) {
+    
+    tm_shape(study_area) +
+    tm_polygons(col = "yellow", id = "WADMPR") +
+    tm_shape(study_events) +
+    tm_dots()
+    
+  }
+  
+  else {
+    
+    tm_shape(study_area) +
+    tm_polygons(col = "yellow", id = "WADMPR")
+    
+  }
+}
+```
+
+Suppose that a user is interested only in armed conflict events that took place in the province of Papua Tengah in year 2020, are of the type "Violence against civilians", involved the TPNPB: West Papua National Liberation Army, and had at least one fatality. They would call *map_adm1()* as in the following code chunk.
+
+```{r}
+
+int <- interval(ymd("2020-01-01"), ymd("2020-12-31"))
+
+map_adm1("Papua Tengah", int, "Violence against civilians", "TPNPB: West Papua National Liberation Army", 1)
+
+tmap_mode("plot")
+```
+
+### 4.0.3 Regency/City Level
+
+We create a function *map_adm1().* The first argument specifies one of the regencies/cities as the study area. The rest of the arguments specify criteria for filtering point events, namely whether they fall into a given date range, belong to a given event type, involve a given actor, and result in at least a certain number of fatalities.
+
+*st_intersection()* of **sf** is used to obtain the point events that intersect with the study area. We do this instead of filtering `points_study` by the value in the admin2 field to avoid our results being affected by any naming or boundary changes over time.
+
+*filter()* of **dplyr** is used to retain only the point events that meet the additional criteria, and these are saved as `study_events` for plotting.
+
+The *if* and *else* statements ensure that if there are no point events within the specified study area that meet the specified criteria, only the study area layer is plotted.
+
+```{r}
+
+map_adm2 <- function(city_regency, date_range, eventtype, actor, min_fatalities) {
+  
+  study_area <- papua_adm2 %>% filter(WADMKK == city_regency)
+  
+  study_events <- st_intersection(points_study, study_area) %>% filter(dmy(event_date) %within% date_range & event_type == eventtype & (actor1 == actor | actor2 == actor) & fatalities >= min_fatalities)
+  
+  tmap_mode("view")
+  
+  if (nrow(study_events) > 0) {
+  
+    tm_shape(study_area) +
+      tm_polygons(col = "green", id = "WADMKK") +
+      tm_shape(study_events) +
+      tm_dots()
+  }
+  
+  else{
+    
+    tm_shape(study_area) +
+      tm_polygons(col = "green", id = "WADMKK")}
+}
+
+
+```
+
+Suppose that a user is interested only in armed conflict events that took place in Puncak regency in between 1 January to 30 June of 2024, are of the type "Violence against civilians", and involved the TPNPB: West Papua National Liberation Army, whether there were any fatalities or not. They would call *map_adm2()* as in the following code chunk.
+
+```{r}
+
+int <- interval(ymd("2024-01-01"), ymd("2024-06-30"))
+
+map_adm2("Puncak", int, "Violence against civilians", "TPNPB: West Papua National Liberation Army", 0)
+
+tmap_mode("plot")
+```
+
+## 

@@ -39,12 +39,20 @@ website:
           href: "In-class_Ex/In-class_Ex09/In-class_Ex09.html"
         - text: "In-class Exercise 10"
           href: "In-class_Ex/In-class_Ex10/In-class_Ex10.html"
+        - text: "In-class Exercise 11"
+          href: "In-class_Ex/In-class_Ex11/In-class_Ex11.html"
     - text: "Take-home Exercise"
       menu:
         - text: "Take-home Exercise 1"
           href: "Take-home_Ex/Take-home_Ex01/Take-home_Ex01.html"
         - text: "Take-home Exercise 2"
           href: "Take-home_Ex/Take-home_Ex02/Take-home_Ex02.html"
+        - text: "Take-home Exercise 3 (Part 1)"
+          href: "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html"
+        - text: "Take-home Exercise 3 (Part 2)"
+          href: "Take-home_Ex/Take-home_Ex03/Take-home_Ex03_part2.html"
+        - text: "Take-home Exercise 3 (Part 3)"
+          href: "Take-home_Ex/Take-home_Ex03/Take-home_Ex03_part3.html"
     right:
       - href: index.qmd
         text: Home
